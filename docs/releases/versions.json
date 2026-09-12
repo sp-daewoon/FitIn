@@ -12,7 +12,7 @@
     "lastPublishedTag": "web/v0.0.1",
     "distribution": "local development / GitHub source"
   },
-  "ios": { "version": "0.0.1", "build": 1, "status": "unreleased", "tag": null },
+  "ios": { "version": "0.0.1", "build": 1, "status": "development", "tag": null, "distribution": "signed local build; simulator launched; physical install pending connection" },
   "android": { "version": "0.0.1", "build": 1, "status": "unreleased", "tag": null },
   "watchos": { "version": "0.0.1", "build": 1, "status": "unimplemented", "tag": null }
 }

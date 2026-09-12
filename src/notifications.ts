@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { Session, elapsedAt, announcement, phaseTitle, TOTAL_SECONDS } from './workout';
+import { Session, elapsedAt, announcement, phaseTitle, sessionLimit } from './workout';
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: false,
@@ -43,7 +43,7 @@ export function syncReminders(session: Session | null, sound: boolean) {
       let start = 0;
       for (const phase of session.phases) {
         if (token !== generation) return;
-        if (start > elapsed && start < TOTAL_SECONDS)
+        if (start > elapsed && start < sessionLimit(session))
           await Notifications.scheduleNotificationAsync({
             content: {
               title: 'FitIn · ' + phaseTitle(phase),
@@ -58,7 +58,7 @@ export function syncReminders(session: Session | null, sound: boolean) {
           });
         start += phase.seconds;
       }
-      const end = Math.min(start, TOTAL_SECONDS);
+      const end = Math.min(start, sessionLimit(session));
       if (token === generation && end > elapsed)
         await Notifications.scheduleNotificationAsync({
           content: {

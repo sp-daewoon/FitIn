@@ -6,6 +6,7 @@ import {
   Preferences,
   TOTAL_SECONDS,
   validateTemplate,
+  routineNames,
 } from './workout';
 const object = (v: unknown): v is Record<string, any> =>
   !!v && typeof v === 'object' && !Array.isArray(v);
@@ -13,26 +14,31 @@ const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFi
 const strings = (v: unknown): v is string[] =>
   Array.isArray(v) && v.every((x) => typeof x === 'string');
 const machine = (v: unknown) => typeof v === 'string' && Object.hasOwn(machines, v);
-const routines = ['fullA', 'fullB', 'upper', 'lower', 'push', 'pull', 'legs'];
+const routines = Object.keys(routineNames);
 /**
  * Version 2 stays readable and is upgraded in memory only. The version-2 snapshot on disk is
  * never rewritten or cleared, so a downgrade still finds its original record.
  */
 function upgrade(d: Record<string, any>): Data {
-  if (d.version === 3) return d as Data;
+  if (d.version === 4) return d as Data;
   const pref: Preferences = {
     ...(d.preferences as Preferences),
-    globalRest: DEFAULT_REST,
-    templates: {},
+    globalRest: d.version === 3 ? d.preferences.globalRest : DEFAULT_REST,
+    templates: d.version === 3 ? d.preferences.templates : {},
   };
-  return { ...d, version: 3, preferences: pref } as Data;
+  return {
+    ...d,
+    version: 4,
+    preferences: pref,
+    session: d.session ? { ...d.session, timeLimit: TOTAL_SECONDS } : null,
+  } as Data;
 }
 /** Unknown/future/corrupt data fails closed. The caller must not overwrite the original. */
 export function decode(raw: string): Data {
   const d: unknown = JSON.parse(raw);
   if (
     !object(d) ||
-    (d.version !== 2 && d.version !== 3) ||
+    ![2, 3, 4].includes(d.version) ||
     typeof d.sound !== 'boolean' ||
     !Array.isArray(d.history) ||
     !object(d.preferences)
@@ -41,7 +47,9 @@ export function decode(raw: string): Data {
   const pref = d.preferences;
   if (
     !['beginner', 'intermediate', 'advanced'].includes(pref.level) ||
-    !['full', 'upperLower', 'ppl', 'fixed'].includes(pref.split) ||
+    !['full', 'upperLower', 'ppl', 'fixed', 'mixedFull', 'torsoLimbs', 'bodyPart'].includes(
+      pref.split,
+    ) ||
     !Array.isArray(pref.starters) ||
     pref.starters.length > 3 ||
     !pref.starters.every(machine) ||
@@ -49,7 +57,7 @@ export function decode(raw: string): Data {
   )
     throw Error('개인 설정을 읽을 수 없습니다.');
   if (pref.savedPlan !== null) validateTemplate(pref.savedPlan);
-  if (d.version === 3) {
+  if (d.version >= 3) {
     if (
       !Number.isInteger(pref.globalRest) ||
       pref.globalRest < 30 ||
@@ -69,7 +77,7 @@ export function decode(raw: string): Data {
         routines.includes(r.routine) &&
         finite(r.endedAt) &&
         finite(r.elapsed) &&
-        r.elapsed <= TOTAL_SECONDS &&
+        (d.version === 4 || r.elapsed <= TOTAL_SECONDS) &&
         Number.isInteger(r.confirmedSets) &&
         r.confirmedSets >= 0 &&
         r.confirmedSets <= 60 &&
@@ -89,7 +97,11 @@ export function decode(raw: string): Data {
       !finite(s.startedAt) ||
       !finite(s.anchor) ||
       !finite(s.elapsed) ||
-      s.elapsed > TOTAL_SECONDS ||
+      (d.version < 4 && s.elapsed > TOTAL_SECONDS) ||
+      (d.version === 4 &&
+        s.timeLimit !== undefined &&
+        s.timeLimit !== null &&
+        s.timeLimit !== TOTAL_SECONDS) ||
       typeof s.paused !== 'boolean' ||
       !Number.isInteger(s.revision) ||
       s.revision < 0 ||
@@ -108,7 +120,7 @@ export function decode(raw: string): Data {
           typeof p.id === 'string' &&
           ['prepare', 'move', 'work', 'rest'].includes(p.kind) &&
           finite(p.seconds) &&
-          p.seconds <= TOTAL_SECONDS &&
+          (d.version === 4 || p.seconds <= TOTAL_SECONDS) &&
           machine(p.machine) &&
           (p.kind === 'work' || p.kind === 'rest'
             ? Number.isInteger(p.set) &&

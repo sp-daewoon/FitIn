@@ -8,18 +8,19 @@ test('round trip preserves a paused session and command deduplication', () => {
   session = applyCommand(session, {
     id: 'pause',
     sessionId: session.id,
-    phaseId: 'legPress:work:1',
+    phaseId: '0:legPress:work:1',
     revision: 0,
     source: 'app',
     type: 'pause',
     at: 15000,
   });
+  assert.equal(session.paused, true);
   const data = { ...emptyData, session };
   assert.deepEqual(decode(JSON.stringify(data)), data);
 });
 test('corrupt and future snapshots are rejected rather than cleared', () => {
   assert.throws(() => decode('{'));
-  assert.throws(() => decode(JSON.stringify({ ...emptyData, version: 4 })));
+  assert.throws(() => decode(JSON.stringify({ ...emptyData, version: 5 })));
   assert.throws(() =>
     decode(
       JSON.stringify({

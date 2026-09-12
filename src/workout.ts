@@ -4,7 +4,8 @@ export const PREPARE_SECONDS = 10;
 export const MOVE_SECONDS = 60;
 export const DEFAULT_REST = 90;
 export const DEFAULT_WORK = 60;
-/** Template membership bound. Execution is still limited by the 40-minute cap. */
+export const WORK_GOAL_SECONDS = 25 * 60;
+/** Bounds editable membership and persisted phase count, independent of duration. */
 export const MAX_ITEMS = 12;
 export const REST_CHOICES = [45, 60, 75, 90, 105, 120, 150, 180];
 export const machines = {
@@ -258,8 +259,22 @@ export const machines = {
 } as const;
 export type MachineId = keyof typeof machines;
 export type Level = 'beginner' | 'intermediate' | 'advanced';
-export type Split = 'full' | 'upperLower' | 'ppl' | 'fixed';
-export type Routine = 'fullA' | 'fullB' | 'upper' | 'lower' | 'push' | 'pull' | 'legs';
+export type Split =
+  'full' | 'upperLower' | 'ppl' | 'fixed' | 'mixedFull' | 'torsoLimbs' | 'bodyPart';
+export type Routine =
+  | 'fullA'
+  | 'fullB'
+  | 'upper'
+  | 'lower'
+  | 'push'
+  | 'pull'
+  | 'legs'
+  | 'mixedA'
+  | 'mixedB'
+  | 'torso'
+  | 'limbs'
+  | 'chestBack'
+  | 'shoulderArms';
 /**
  * `rest` and `work` are always the effective seconds for this item.
  * `finisher` marks an explicit end-of-session addition: only finishers may repeat a movement.
@@ -301,6 +316,8 @@ export type Phase = {
   sets?: number;
 };
 export type Session = {
+  /** Missing means a legacy 40-minute session; null means complete the whole routine. */
+  timeLimit?: number | null;
   id: string;
   routine: Routine;
   startedAt: number;
@@ -323,14 +340,14 @@ export type RecordEntry = {
   performed: MachineId[];
 };
 export type Data = {
-  version: 3;
+  version: 4;
   history: RecordEntry[];
   session: Session | null;
   sound: boolean;
   preferences: Preferences;
 };
 export const emptyData: Data = {
-  version: 3,
+  version: 4,
   history: [],
   session: null,
   sound: true,
@@ -344,6 +361,12 @@ const plans: Record<Routine, MachineId[]> = {
   push: ['chestPress', 'shoulderPress', 'pecDeck', 'lateralRaise', 'tricepsPushdown'],
   pull: ['latPulldown', 'row', 'facePull', 'dumbbellCurl'],
   legs: ['legPress', 'romanianDeadlift', 'legCurl', 'legExtension', 'crunch'],
+  mixedA: ['squat', 'dumbbellBenchPress', 'latPulldown', 'legCurl', 'facePull'],
+  mixedB: ['romanianDeadlift', 'legPress', 'shoulderPress', 'row', 'crunch'],
+  torso: ['chestPress', 'latPulldown', 'row', 'shoulderPress', 'facePull'],
+  limbs: ['legPress', 'romanianDeadlift', 'legCurl', 'tricepsPushdown', 'dumbbellCurl'],
+  chestBack: ['benchPress', 'latPulldown', 'dumbbellRow', 'pecDeck', 'facePull'],
+  shoulderArms: ['shoulderPress', 'lateralRaise', 'facePull', 'tricepsPushdown', 'dumbbellCurl'],
 };
 export const routineNames: Record<Routine, string> = {
   fullA: '전신 A',
@@ -353,8 +376,17 @@ export const routineNames: Record<Routine, string> = {
   push: '밀기',
   pull: '당기기',
   legs: '하체',
+  mixedA: '혼합 전신 A',
+  mixedB: '혼합 전신 B',
+  torso: '몸통',
+  limbs: '하체·팔',
+  chestBack: '가슴·등',
+  shoulderArms: '어깨·팔',
 };
 export function routineCycle(split: Split): Routine[] {
+  if (split === 'mixedFull') return ['mixedA', 'mixedB'];
+  if (split === 'torsoLimbs') return ['torso', 'limbs'];
+  if (split === 'bodyPart') return ['chestBack', 'shoulderArms', 'legs'];
   return split === 'upperLower'
     ? ['upper', 'lower']
     : split === 'ppl'
@@ -381,6 +413,18 @@ export function defaultPlan(routine: Routine): PlanItem[] {
     rest: DEFAULT_REST,
   }));
 }
+/** User's 25-minute work-window target, not a minimum physiological training dose. */
+export function recommendedPlan(routine: Routine): PlanItem[] {
+  const order: MachineId[] =
+    routine === 'upper'
+      ? ['chestPress', 'latPulldown', 'row', 'shoulderPress', 'facePull']
+      : routine === 'lower'
+        ? ['legPress', 'romanianDeadlift', 'legCurl', 'legExtension', 'crunch']
+        : routine === 'pull'
+          ? ['latPulldown', 'row', 'facePull', 'dumbbellCurl', 'crunch']
+          : plans[routine];
+  return order.map((machine) => ({ machine, sets: 5, work: DEFAULT_WORK, rest: DEFAULT_REST }));
+}
 /** The persistent goal template: stored template, else the legacy fixed plan, else the default. */
 export function resolveTemplate(routine: Routine, preferences: Preferences): PlanItem[] {
   const stored = preferences.templates?.[routine];
@@ -389,7 +433,7 @@ export function resolveTemplate(routine: Routine, preferences: Preferences): Pla
   // never overwrites them. Only a generated default inherits the global value.
   const legacy = preferences.savedPlan;
   if (legacy?.length) return legacy.map((x) => ({ ...x }));
-  return applyGlobalRest(defaultPlan(routine), preferences.globalRest ?? DEFAULT_REST);
+  return applyGlobalRest(recommendedPlan(routine), preferences.globalRest ?? DEFAULT_REST);
 }
 /** One resolver for today's plan and future previews; legacy saved plans retain their behavior. */
 export function resolvePlan(routine: Routine, preferences: Preferences): PlanItem[] {
@@ -463,14 +507,12 @@ function checkItems(items: PlanItem[]): void {
     seen.add(x.machine);
   }
 }
-/** A goal template may exceed the cap on purpose; only execution is capped. */
+/** Templates and new sessions share shape validation, without a total-duration cap. */
 export function validateTemplate(items: PlanItem[]): void {
   checkItems(items);
 }
 export function validatePlan(items: PlanItem[]): void {
   checkItems(items);
-  if (planSeconds(items) > TOTAL_SECONDS)
-    throw Error('40분을 넘었어요. 운동이나 세트를 줄여주세요.');
 }
 /** A visible substitution proposal; never silently cuts rest to squeeze in preferences. */
 export function withStarters(
@@ -542,6 +584,7 @@ export function buildPhases(items: PlanItem[]): Phase[] {
 }
 export function begin(routine: Routine, items: PlanItem[], now: number, id = String(now)): Session {
   return {
+    timeLimit: null,
     id,
     routine,
     startedAt: now,
@@ -554,13 +597,16 @@ export function begin(routine: Routine, items: PlanItem[], now: number, id = Str
     commands: [],
   };
 }
+export function sessionLimit(s: Session) {
+  return s.timeLimit === null ? Infinity : (s.timeLimit ?? TOTAL_SECONDS);
+}
 export function elapsedAt(s: Session, now: number) {
-  return Math.min(TOTAL_SECONDS, s.elapsed + (s.paused ? 0 : Math.max(0, now - s.anchor) / 1000));
+  return Math.min(sessionLimit(s), s.elapsed + (s.paused ? 0 : Math.max(0, now - s.anchor) / 1000));
 }
 export function position(s: Session, now: number) {
   const elapsed = elapsedAt(s, now);
   let start = 0;
-  if (elapsed >= TOTAL_SECONDS)
+  if (elapsed >= sessionLimit(s))
     return { phase: null, index: s.phases.length, remaining: 0, elapsed, start: elapsed };
   for (let index = 0; index < s.phases.length; index++) {
     const phase = s.phases[index];
@@ -568,7 +614,7 @@ export function position(s: Session, now: number) {
       return {
         phase,
         index,
-        remaining: Math.min(start + phase.seconds - elapsed, TOTAL_SECONDS - elapsed),
+        remaining: Math.min(start + phase.seconds - elapsed, sessionLimit(s) - elapsed),
         elapsed,
         start,
       };
@@ -621,7 +667,7 @@ export function applyCommand(s: Session, c: Command): Session {
   if (c.type === 'extend')
     next.phases[p.index].seconds += Math.min(
       30,
-      Math.max(0, TOTAL_SECONDS - p.elapsed - p.remaining),
+      Math.max(0, sessionLimit(s) - p.elapsed - p.remaining),
     );
   return next;
 }
@@ -660,7 +706,7 @@ export function finish(data: Data, now: number, reason: RecordEntry['reason']): 
     s.phases.reduce((n, p) => n + p.seconds, 0),
   );
   const actualReason =
-    reason === 'stopped' ? 'stopped' : elapsedAt(s, now) >= TOTAL_SECONDS ? 'budget' : 'routine';
+    reason === 'stopped' ? 'stopped' : elapsedAt(s, now) >= sessionLimit(s) ? 'budget' : 'routine';
   const performed = [
     ...new Set(s.phases.filter((p) => s.confirmed.includes(p.id)).map((p) => p.machine)),
   ];

@@ -3,9 +3,9 @@
 Review only unless the task explicitly authorizes fixes. Read [AGENTS.md](../../AGENTS.md), [PRODUCT.md](../../docs/PRODUCT.md), relevant requirement IDs, then inspect the actual diff and affected callers. Do not rely on the implementer's summary as evidence.
 
 Check material regressions in the affected surface:
-- Ten-second first-set start, no warmup; manual early/late progression; pause/relaunch; bounded active time.
+- Ten-second first-set start, no warmup; manual early/late progression; pause/relaunch; the new unlimited timeline and migrated active cap.
 - A double tap, delayed watch command, or stale-session message cannot skip two phases or mutate a new workout.
-- Elapsed time is never recorded as confirmed exercise. Early finish and 40-minute cutoff remain distinct.
+- Elapsed time is never recorded as confirmed exercise. Early finish and legacy 40-minute cutoff remain distinct.
 - Starter personalization does not change defaults for everyone, silently cut rest, or mask changed muscle coverage.
 - Storage corruption does not overwrite originals; migration and command identity survive restart.
 - Content/platform statuses match real evidence; generated anatomy and simulated Watch inputs are not called verified.

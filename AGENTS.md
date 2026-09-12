@@ -15,7 +15,7 @@ Applies to this repository and every AI working in it. The latest explicit user 
 - Machine-led beginner coaching remains the default. A user's dumbbell example is an optional customizable starter, never a universal default.
 - Check-in occurs **after warmup**. Only 10 seconds of setup precede the first working set. Do not reintroduce the old 3-minute warmup.
 - Auto progression and explicit controls coexist: complete set, skip rest/transition, extend current phase, pause/resume. Pause freezes phase and active time budget.
-- Forty minutes is the active-session cap in the current implementation; finishing early is allowed, never pad saved time with forced cooldown. This product decision is documented, not a physiological claim.
+- New sessions run the entire plan without a forty-minute cap. Recommended plans target at least 25 minutes of planned work windows, excluding rest; shorter custom plans and early completion remain valid. Migrated sessions retain their original 2400-second cap. Neither duration is a physiological prescription or proof of performed work.
 - Elapsed time is not evidence that an exercise was performed. Explicit completion, automatic progression and cutoff have different records.
 - App, Watch and headphone inputs must use the same guarded command engine. No separate timer/reducer in a client adapter.
 - The app prioritizes exercise/machine imagery and target muscles. Timer-first UI is appropriate for the future watch surface, not the phone.

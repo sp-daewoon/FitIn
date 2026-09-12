@@ -33,6 +33,7 @@
           "enableBackgroundRecording": false
         }
       ],
+      "./plugins/with-local-notifications",
       "expo-notifications"
     ]
   }

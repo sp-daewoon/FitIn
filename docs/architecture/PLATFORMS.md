@@ -16,7 +16,7 @@
 
 [Expo Speech](https://docs.expo.dev/versions/latest/sdk/speech/) supports iOS `useApplicationAudioSession: false` so speech session mixing/ducking can be system-managed. [Expo Audio](https://docs.expo.dev/versions/latest/sdk/audio/) offers `duckOthers`; it is not an API for prescribing another app's exact fade curve. Web speech quality and voices depend on the browser/device. iOS silent-mode behavior and audio interruptions need device evidence.
 
-Current environment has Command Line Tools, not full Xcode. No native build, Watch connection or physical AirPods verification has been performed. Computer-use automation remains paused per the user's earlier request; source checks and terminal builds do not imply visual QA.
+Full Xcode 26.4.1 and the iOS simulator runtime are now available. Use `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` per command; do not change the user's global toolchain selection. Consult the current [handoff](../HANDOFF.md) for actual build/run evidence. Source checks and terminal builds do not establish physical Watch or AirPods behavior.
 
 ## Manual acceptance protocol
 
@@ -28,4 +28,4 @@ Record device/OS, build revision, sound settings, connected music app, steps and
 4. Lock, return, kill and reopen; position correct and no duplicate cues/records.
 5. Headphones disconnect, phone call, audio interruption; no runaway session/audio ownership.
 6. Watch app+phone simultaneous next; delayed/replayed commands; reconnect after phase transition; only one state transition.
-7. At 40 minutes stop; do not mark remaining sets performed. Local save failure retains recoverable state.
+7. New sessions continue beyond 40 minutes to the end of the saved plan. Migrated sessions still stop at their original cap; neither path marks automatic time as performed. Local save failure retains recoverable state.

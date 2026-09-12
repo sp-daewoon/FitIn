@@ -102,7 +102,7 @@ test('per-exercise work duration changes only that exercise time', () => {
   assert.equal(a.setup + a.work + a.rest + a.move, planSeconds(before));
 });
 
-test('a goal template may exceed 40 minutes; execution caps and names the unperformed items', () => {
+test('new execution accepts long templates; legacy capping helper reports dropped items', () => {
   const overCap = [
     ...defaultPlan('fullA'),
     item('deadlift', { finisher: true, sets: 4, work: 90, rest: 150 }),
@@ -110,7 +110,8 @@ test('a goal template may exceed 40 minutes; execution caps and names the unperf
   ];
   assert.ok(planSeconds(overCap) > TOTAL_SECONDS);
   validateTemplate(overCap);
-  assert.throws(() => validatePlan(overCap));
+  validatePlan(overCap);
+  assert.ok(position(begin('fullA', overCap, 0), 2400000).phase);
   const capped = capPlan(overCap);
   assert.ok(planSeconds(capped.items) <= TOTAL_SECONDS);
   assert.ok(capped.dropped.length > 0, 'dropped items are reported, not silently removed');
@@ -145,7 +146,7 @@ test('a saved template survives a storage roundtrip and a version-2 snapshot sti
     preferences: { ...defaultPreferences, globalRest: 120, templates: { fullA: template } },
   };
   const back = decode(JSON.stringify(saved));
-  assert.equal(back.version, 3);
+  assert.equal(back.version, 4);
   assert.equal(back.preferences.globalRest, 120);
   assert.deepEqual(back.preferences.templates.fullA, template);
 
@@ -162,7 +163,7 @@ test('a saved template survives a storage roundtrip and a version-2 snapshot sti
     },
   };
   const upgraded = decode(JSON.stringify(legacy));
-  assert.equal(upgraded.version, 3);
+  assert.equal(upgraded.version, 4);
   assert.equal(upgraded.preferences.globalRest, DEFAULT_REST);
   assert.deepEqual(upgraded.preferences.templates, {});
   assert.equal(upgraded.preferences.savedPlan![0].rest, 120, 'explicit version-2 rest is kept');

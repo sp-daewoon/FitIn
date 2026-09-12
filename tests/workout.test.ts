@@ -44,10 +44,11 @@ test('check-in is exactly ten seconds, then first work set without another move/
   assert.equal(position(s, 10000).phase?.set, 1);
   assert.equal(planSeconds(defaultPlan('fullA')), 2050);
 });
-test('all presets fit within 40 minutes, reject an overloaded plan', () => {
+test('legacy presets remain stable; longer valid plans are accepted, invalid sets rejected', () => {
   for (const r of ['fullA', 'fullB', 'upper', 'lower', 'push', 'pull', 'legs'] as const)
     assert.ok(planSeconds(defaultPlan(r)) <= TOTAL_SECONDS);
-  assert.throws(() => validatePlan(defaultPlan('fullA').map((x) => ({ ...x, sets: 5 }))));
+  validatePlan(defaultPlan('fullA').map((x) => ({ ...x, sets: 5 })));
+  assert.throws(() => validatePlan(defaultPlan('fullA').map((x) => ({ ...x, sets: 6 }))));
 });
 test('do not force filler time when routine finishes earlier', () => {
   const s = fresh();
@@ -161,8 +162,9 @@ test('swapping future machines preserves their complete phase blocks and setting
   );
   assert.equal(swapUpcoming(s, 'legPress', 'chestPress', 10000), s);
 });
-test('40 minute boundary ends even after repeated extensions', () => {
+test('legacy 40 minute boundary ends even after repeated extensions', () => {
   let s = fresh();
+  s.timeLimit = 2400;
   for (let i = 0; i < 90; i++) s = applyCommand(s, command(s, 11000, 'extend'));
   assert.equal(position(s, 2400000).phase, null);
   assert.equal(elapsedAt(s, 3000000), 2400);

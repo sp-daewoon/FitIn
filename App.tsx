@@ -17,15 +17,16 @@ import { useWorkout } from './src/useWorkout';
 import { ExerciseVisual } from './src/ExerciseVisual';
 import { ExerciseLibrary } from './src/ExerciseLibrary';
 import { RoutinePlanner } from './src/RoutinePlanner';
+import { WatchPreview } from './src/WatchPreview';
+import versions from './docs/releases/versions.json';
 import { exerciseVideos, videoSearch } from './src/videos';
 import { repetitionGuide } from './src/programGuidance';
 import { Harness } from './src/Harness';
 import {
-  capPlan,
-  defaultPlan,
+  recommendedPlan as defaultPlan,
+  sessionLimit,
   DEFAULT_WORK,
   formatTime,
-  Level,
   MachineId,
   machines,
   markRestOverrides,
@@ -38,7 +39,6 @@ import {
   resolvePlan,
   Routine,
   Split,
-  TOTAL_SECONDS,
   validateTemplate,
   withStarters,
 } from './src/workout';
@@ -103,17 +103,20 @@ function FitIn() {
   const m = machines[machine];
   let planError = '';
   try {
-    // Shape only: a goal template is allowed to exceed the cap, so the 40-minute consequence is
-    // an explicit check-in choice below rather than a blocking error.
+    // Personal goals can be shorter or longer than the recommended work-duration target.
     validateTemplate(items);
   } catch (e) {
     planError = (e as Error).message;
   }
   const total = planSeconds(items),
     parts = planBreakdown(items),
-    capped = capPlan(items),
-    overCap = !planError && capped.dropped.length > 0,
-    remaining = TOTAL_SECONDS - (p?.elapsed ?? 0);
+    sessionDuration = session
+      ? Math.min(
+          sessionLimit(session),
+          session.phases.reduce((sum, phase) => sum + phase.seconds, 0),
+        )
+      : total,
+    remaining = Math.max(0, sessionDuration - (p?.elapsed ?? 0));
   const upcoming =
     session && p
       ? session.phases.filter((x) => x.kind === 'move' && session.phases.indexOf(x) > p.index)
@@ -182,7 +185,7 @@ function FitIn() {
     if (session) return;
     w.setData((d) => ({
       ...d,
-      preferences: { ...d.preferences, split, starters: [], savedPlan: null, templates: {} },
+      preferences: { ...d.preferences, split },
     }));
     setTab('today');
     setNotice('선택한 루틴을 적용했어요. 오늘 순서를 확인하고 체크인하세요.');
@@ -254,7 +257,14 @@ function FitIn() {
           <View style={s.headerRight}>
             <View style={s.dot} />
             <Text style={s.small}>내 기기에만 저장</Text>
-            <Text style={s.buildTag}>0.0.1 · PREVIEW</Text>
+            <Text style={s.buildTag}>
+              {
+                versions[
+                  Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web'
+                ].version
+              }{' '}
+              · PREVIEW
+            </Text>
           </View>
         </View>
         <View style={s.nav}>
@@ -308,7 +318,7 @@ function FitIn() {
               <>
                 <View style={s.intro}>
                   <Text style={s.overline}>
-                    {session ? 'FOCUS ON THE MOVEMENT' : 'YOUR 40-MINUTE FOCUS'}
+                    {session ? 'FOCUS ON THE MOVEMENT' : 'YOUR TRAINING SESSION'}
                   </Text>
                   <Text style={s.title}>
                     {session
@@ -368,12 +378,15 @@ function FitIn() {
                           </View>
                           <View style={s.track}>
                             <View
-                              style={[s.fill, { width: `${(p.elapsed / TOTAL_SECONDS) * 100}%` }]}
+                              style={[
+                                s.fill,
+                                { width: `${(p.elapsed / Math.max(1, sessionDuration)) * 100}%` },
+                              ]}
                             />
                           </View>
                           <View style={s.between}>
                             <Text style={s.small}>전체 {formatTime(p.elapsed)}</Text>
-                            <Text style={s.small}>40분까지 {formatTime(remaining)}</Text>
+                            <Text style={s.small}>예상 남음 {formatTime(remaining)}</Text>
                           </View>
                           <View style={{ marginTop: 22 }}>
                             <Button
@@ -415,12 +428,6 @@ function FitIn() {
                             자동으로 이어지지만 준비되면 바로 넘어갈 수 있어요. 완료 버튼을 누른
                             세트만 수행으로 기록합니다.
                           </Text>
-                          {session.phases.reduce((a, x) => a + x.seconds, 0) > 2400 && (
-                            <Text style={s.limit}>
-                              시간을 늘려 뒤쪽 일정이 40분을 넘어요. 40분에 종료하며 남은 세트는
-                              미수행으로 남습니다.
-                            </Text>
-                          )}
                         </View>
                         <View style={s.card}>
                           <Text style={s.section}>다음 순서</Text>
@@ -478,9 +485,10 @@ function FitIn() {
                           <View style={s.summaryRow}>
                             <View>
                               <Text style={s.summaryNumber}>
-                                40<Text style={s.summaryUnit}> 분 이내</Text>
+                                {Math.round(parts.work / 60)}
+                                <Text style={s.summaryUnit}> 분 운동 구간</Text>
                               </Text>
-                              <Text style={s.small}>운동과 휴식 모두 포함</Text>
+                              <Text style={s.small}>휴식·이동 제외한 계획 시간</Text>
                             </View>
                             <View style={s.summaryDivider} />
                             <View>
@@ -511,48 +519,21 @@ function FitIn() {
                               <Text style={s.budgetValue}>{formatTime(total)}</Text>
                             </View>
                             <View style={s.between}>
-                              <Text style={s.small}>
-                                {total > TOTAL_SECONDS ? '40분 초과' : '40분까지 여유'}
-                              </Text>
+                              <Text style={s.small}>운동 구간 목표 25분</Text>
                               <Text style={s.budgetValue}>
-                                {formatTime(Math.abs(TOTAL_SECONDS - total))}
+                                {parts.work >= 1500
+                                  ? '목표 충족'
+                                  : formatTime(1500 - parts.work) + ' 부족'}
                               </Text>
                             </View>
                           </View>
                           {planError ? <Text style={s.limit}>{planError}</Text> : null}
-                          {overCap ? (
-                            <>
-                              <Text style={s.limit}>
-                                내 기본 루틴이 40분보다 깁니다. 어떻게 할지 골라주세요. 휴식을 몰래
-                                줄이거나 운동을 말없이 빼지 않아요.
-                              </Text>
-                              <Text style={s.helper}>
-                                40분까지만 하면 다음 운동은 하지 않은 것으로 남아요 ·{' '}
-                                {capped.dropped.map((x) => machines[x.machine].name).join(' · ')}
-                              </Text>
-                              <Button
-                                disabled={w.busy}
-                                label={w.busy ? '준비 중…' : '40분까지만 하고 시작  →'}
-                                onPress={() => {
-                                  setNotice(
-                                    `${capped.dropped.map((x) => machines[x.machine].name).join(' · ')}는 오늘 하지 않은 것으로 기록됩니다.`,
-                                  );
-                                  void w.start(routine, capped.items);
-                                }}
-                              />
-                              <Button
-                                secondary
-                                label="오늘만 줄여서 40분에 맞추기"
-                                onPress={() => setEdit(true)}
-                              />
-                            </>
-                          ) : (
-                            <Button
-                              disabled={w.busy || !!planError}
-                              label={w.busy ? '준비 중…' : '체크인하고 시작  →'}
-                              onPress={() => void w.start(routine, items)}
-                            />
-                          )}
+                          <Button
+                            disabled={w.busy || !!planError}
+                            label={w.busy ? '준비 중…' : '체크인하고 전체 루틴 시작 →'}
+                            onPress={() => void w.start(routine, items)}
+                          />
+
                           <Text style={s.helper}>
                             몸풀기를 마친 상태에서 시작해요.{'\n'}“시작하겠습니다” 안내 후 10초
                             여유를 드려요.
@@ -674,57 +655,22 @@ function FitIn() {
                   </Text>
                 </View>
                 <View style={s.card}>
-                  <Text style={s.section}>난이도</Text>
-                  <View style={s.chips}>
-                    {(['beginner', 'intermediate', 'advanced'] as Level[]).map((level, i) => (
-                      <Pressable
-                        accessibilityRole="button"
-                        disabled={!!session}
-                        key={level}
-                        style={[s.chip, data.preferences.level === level && s.chipSelected]}
-                        onPress={() =>
-                          w.setData((d) => ({ ...d, preferences: { ...d.preferences, level } }))
-                        }
-                      >
-                        <Text>{['초보', '중수', '고급'][i]}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                  <Text style={s.helper}>
-                    현재는 선호를 저장합니다. 단계별 훈련량 추천은 검수 후 적용하며, 휴식을 자동으로
-                    줄이지 않아요.
-                  </Text>
-                  <Text style={[s.section, { marginTop: 22 }]}>분할 방식</Text>
-                  <View style={s.chips}>
-                    {(['full', 'upperLower', 'ppl', 'fixed'] as Split[]).map((split, i) => (
-                      <Pressable
-                        accessibilityRole="button"
-                        disabled={!!session}
-                        key={split}
-                        style={[s.chip, data.preferences.split === split && s.chipSelected]}
-                        onPress={() =>
-                          w.setData((d) => ({
-                            ...d,
-                            preferences: { ...d.preferences, split, savedPlan: null },
-                          }))
-                        }
-                      >
-                        <Text>
-                          {['전신', '상체 / 하체', '밀기 / 당기기 / 하체', '고정 루틴'][i]}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                  <Text style={s.helper}>
-                    분할을 바꾸면 해당 방식의 기본 종목으로 재구성해요. 현재는 수행 기록이 있는 종료
-                    루틴의 다음 순서를 제안합니다. 회복·피로 기반 개인화는 아직 개발 중이에요.
-                  </Text>
-                  <View style={s.line} />
+                  <Button
+                    secondary
+                    label="분할·루틴 설정은 내 루틴에서 →"
+                    onPress={() => setTab('plan')}
+                  />
+                  <WatchPreview
+                    session={session}
+                    now={w.now}
+                    fallback={machine}
+                    onCommand={w.command}
+                  />
                   <Text style={s.section}>Apple 건강</Text>
                   <Text style={s.liveBadge}>iPhone 연동 준비 중 · 현재 미연결</Text>
                   <Text style={s.helper}>
                     동의한 경우 완료한 근력 운동을 건강 앱에 저장하고, Apple Watch의 심박수를 함께
-                    확인하는 기능을 준비합니다. 현재 웹에서는 건강 데이터를 읽거나 저장하지 않아요.
+                    확인하는 기능을 준비합니다. 현재 버전은 건강 데이터를 읽거나 저장하지 않아요.
                     연동 없이도 FitIn을 사용할 수 있습니다.
                   </Text>
                   <View style={s.line} />
@@ -749,7 +695,7 @@ function FitIn() {
                   <Button
                     disabled={!!session}
                     secondary
-                    label="추천 기본값으로 되돌리기"
+                    label="개인 시작 운동·이전 고정 설정 해제"
                     onPress={() => {
                       w.setData((d) => ({
                         ...d,
@@ -891,7 +837,7 @@ function FitIn() {
                     기본 루틴에서 다시 구성합니다. 같은 동작 패턴을 우선 대체하지만, 없으면 다른
                     운동이 대체될 수 있어요. 적용 후 부위와 시간을 확인해주세요.
                   </Text>
-                  <Button label="40분 안에 재구성하고 저장" onPress={applyPersonal} />
+                  <Button label="시작 운동 재구성하고 저장" onPress={applyPersonal} />
                 </>
               ) : (
                 <>
@@ -1045,15 +991,8 @@ function FitIn() {
                     운동 {formatTime(parts.work)} · 휴식 {formatTime(parts.rest)} · 이동·준비{' '}
                     {formatTime(parts.move + parts.setup)}
                   </Text>
-                  <Text style={s.section}>예상 {formatTime(total)} / 40:00</Text>
-                  {overCap && (
-                    <Text style={s.limit}>
-                      40분을 {formatTime(total - TOTAL_SECONDS)} 넘습니다. 그대로 두면 체크인할 때
-                      40분까지만 하고{' '}
-                      {capped.dropped.map((x) => machines[x.machine].name).join(' · ')}은 하지 않은
-                      것으로 남아요.
-                    </Text>
-                  )}
+                  <Text style={s.section}>전체 예상 {formatTime(total)} · 시간 제한 없음</Text>
+
                   <Text style={s.helper}>
                     변경한 부위: {items.map((x) => machines[x.machine].area).join(' · ')}
                   </Text>

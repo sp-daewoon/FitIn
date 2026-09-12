@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import {
   defaultPreferences,
   defaultPlan,
+  recommendedPlan,
+  planBreakdown,
   nextRoutine,
   planSeconds,
   resolvePlan,
@@ -19,16 +21,25 @@ import {
 import { exerciseVideos, videoSearch } from '../src/videos';
 import { machines, MachineId } from '../src/workout';
 
-test('each selectable program exposes its complete valid cycle, and previews preserve the 40 minute cap', () => {
-  for (const split of ['full', 'upperLower', 'ppl', 'fixed'] as Split[]) {
+test('seven programs offer valid cycles with at least 25 minutes of planned work', () => {
+  for (const split of [
+    'full',
+    'upperLower',
+    'ppl',
+    'fixed',
+    'mixedFull',
+    'torsoLimbs',
+    'bodyPart',
+  ] as Split[]) {
     const preferences = { ...defaultPreferences, split };
     const cycle = routineCycle(split);
     assert.equal(nextRoutine([], split), cycle[0]);
     for (const routine of cycle) {
       const plan = resolvePlan(routine, preferences);
       validatePlan(plan);
-      assert.ok(planSeconds(plan) <= 2400);
-      assert.deepEqual(plan, defaultPlan(routine));
+      assert.ok(planBreakdown(plan).work >= 1500);
+      assert.equal(new Set(plan.map((x) => x.machine)).size, plan.length);
+      assert.deepEqual(plan, recommendedPlan(routine));
     }
   }
 });
@@ -45,7 +56,7 @@ test('future previews use saved custom exercise settings without mutating persis
 test('personal starters apply to upper sessions while lower-session preview stays lower', () => {
   const preferences = { ...defaultPreferences, starters: ['shoulderPress' as const] };
   assert.equal(resolvePlan('upper', preferences)[0].machine, 'shoulderPress');
-  assert.deepEqual(resolvePlan('lower', preferences), defaultPlan('lower'));
+  assert.deepEqual(resolvePlan('lower', preferences), recommendedPlan('lower'));
 });
 test('days passing and stopping never advance cycle; explicit performed routine completion does', () => {
   let session = begin('upper', defaultPlan('upper'), 0);

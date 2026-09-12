@@ -6,7 +6,7 @@
 
 ## Clock
 
-Phases have stable IDs (`machine:work:set`, `machine:rest:set`, move and prepare). `elapsedAt = persisted elapsed + nonnegative wall-clock delta since anchor`, unless paused, capped at 2400. `position` resolves the phase from durations and terminates at either end of timeline or cap. UI ticks update display only. Snapshot anchors survive restart.
+Phases have stable IDs (`index:machine:work:set`, `index:machine:rest:set`, move and prepare; legacy IDs are preserved). `elapsedAt = persisted elapsed + nonnegative wall-clock delta since anchor`, unless paused, bounded by `sessionLimit`: new sessions carry `timeLimit: null` (no cap); migrated v2/v3 sessions carry 2400. `position` resolves the phase from durations and terminates at either end of timeline or cap. UI ticks update display only. Snapshot anchors survive restart.
 
 `next`: truncate the current duration to elapsed-in-phase; confirm only work phases. `extend`: append up to 30 seconds to current phase without crossing the active cap. `pause/resume`: snapshot elapsed and re-anchor. No filler is appended after early completion.
 
@@ -31,7 +31,7 @@ Starter substitution prefers same pattern, then same target area, then an availa
 
 ## Persistence
 
-`src/codec.ts`: validate unknown JSON before use. `src/storage.ts`: AsyncStorage key `fitin.v2`, serialized writes, no parse-error reset. Load failure leaves app in read failure state and avoids writes. Save failure exposes retry. Old `fitin.v1` is retained separately and reported to the user; migration of old active sessions is intentionally not automatic.
+`src/codec.ts`: validate unknown JSON before use. `src/storage.ts`: AsyncStorage key `fitin.v4`, explicitly reading/migrating v3 then v2 when v4 is absent, serialized writes, no parse-error reset. Load failure leaves app in read failure state and avoids writes. Save failure exposes retry. Old `fitin.v1` is retained separately and reported to the user; migration of old active sessions is intentionally not automatic.
 
 For a schema change: introduce an explicit version path; define fixtures; preserve original data on failure; test paused/extended/early-completed sessions and stale command delivery after reload. Do not simply rename fields and bump the version.
 

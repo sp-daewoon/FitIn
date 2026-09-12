@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
-  defaultPlan,
+  recommendedPlan as defaultPlan,
+  planBreakdown,
+  sessionLimit,
   formatTime,
   MachineId,
   machines,
@@ -15,7 +17,6 @@ import {
   routineNames,
   Split,
   Session,
-  TOTAL_SECONDS,
 } from './workout';
 import {
   alternatives,
@@ -54,6 +55,27 @@ const programs: { split: Split; name: string; forWho: string; why: string; rhyth
     forWho: '동작을 바꾸기보다 같은 순서를 익히고 싶을 때',
     why: '전신 A를 반복하고 필요한 운동을 바꿔 저장할 수 있어요.',
     rhythm: '주 2~3회 예시 · 같은 부위의 연일 운동은 피하기',
+  },
+  {
+    split: 'mixedFull',
+    name: '머신 + 프리웨이트 전신',
+    forWho: '스쿼트·덤벨 동작에 익숙할 때',
+    why: '스쿼트 중심 날과 힙 힌지 중심 날을 나눠 상체 밀기·당기기를 함께 구성해요.',
+    rhythm: '주 2~3회 · A/B 사이에 휴식',
+  },
+  {
+    split: 'torsoLimbs',
+    name: '몸통 / 하체·팔 2분할',
+    forWho: '가슴·등을 함께, 팔은 별도 날에',
+    why: '몸통 날은 가슴·등·어깨, 다음 날은 하체와 팔을 함께 구성해요. 어깨·팔의 간접 부하도 고려해 휴식일을 둡니다.',
+    rhythm: '주 4회 예시 · 몸통 → 하체·팔 → 휴식',
+  },
+  {
+    split: 'bodyPart',
+    name: '가슴·등 / 어깨·팔 / 하체',
+    forWho: '부위별 집중을 선호할 때',
+    why: '가슴과 등을 번갈아 훈련하고 어깨·팔과 하체를 다른 방문으로 나눠요. 연속 상체 훈련 사이 회복을 고려하세요.',
+    rhythm: '주 3회 예시 · 각 운동일 사이 휴식',
   },
 ];
 const visitLabels = ['오늘', '다음 방문', '다다음 방문'];
@@ -126,7 +148,7 @@ export function RoutinePlanner({
         const plan = offset === 0 ? today : resolvePlan(step, preferences);
         const sessionSeconds = session
           ? Math.min(
-              TOTAL_SECONDS,
+              sessionLimit(session),
               session.phases.reduce((sum, x) => sum + x.seconds, 0),
             )
           : 0;
@@ -147,6 +169,12 @@ export function RoutinePlanner({
               </Text>
             </View>
             <Text style={s.body}>{names.join(' · ')}</Text>
+            <Text style={s.meta}>
+              {offset === 0 && session
+                ? '실행 중인 세션'
+                : `운동 구간 ${formatTime(planBreakdown(plan).work)} · 휴식 ${formatTime(planBreakdown(plan).rest)}`}{' '}
+              · 예상 진행 시간
+            </Text>
             {offset === 0 && (
               <Pressable accessibilityRole="button" onPress={onToday} style={s.button}>
                 <Text style={s.name}>
@@ -188,11 +216,15 @@ export function RoutinePlanner({
         </View>
         <Text style={s.meta}>
           {routineCycle(preview)
-            .map((step) => `${routineNames[step]} ${formatTime(planSeconds(defaultPlan(step)))}`)
+            .map(
+              (step) =>
+                `${routineNames[step]} · 운동 ${formatTime(planBreakdown(resolvePlan(step, { ...preferences, split: preview })).work)} / 전체 ${formatTime(planSeconds(resolvePlan(step, { ...preferences, split: preview })))}`,
+            )
             .join('  ·  ')}
         </Text>
         <Text style={s.meta}>
-          적용하면 시작 운동과 저장한 기본 루틴을 이 구성으로 바꿉니다. 지난 기록과 순서는 유지돼요.
+          분할 방식은 여기서 선택해요. 저장한 종목·마무리 운동은 유지하고, 새로 선택한 구성만
+          기본안으로 시작합니다. 수정한 날의 기본안은 위 편집기에서 되돌릴 수 있어요.
         </Text>
         <Pressable
           disabled={active}
@@ -275,9 +307,11 @@ export function RoutinePlanner({
           </Text>
           <Text style={s.heading}>이대로 시작할 때</Text>
           <Text style={s.body}>
-            기본은 각 운동 3세트, 세트당 60초예요. 세트당 시간과 휴식은 내 기본 루틴에서 바꿀 수
-            있고, 바꾸면 위의 예상 시간에 바로 반영됩니다. 횟수를 채우고 먼저 끝나면 세트 완료를
-            누르고, 필요하면 +30초 더 또는 일시정지를 사용하세요.
+            새 기본안은 5종목 × 5세트 × 60초로 운동 구간 25분을 계획합니다. 이는 사용자가 요청한
+            시간 목표이며 보편적인 최소 운동량은 아닙니다. 익숙하지 않거나 피로하면 세트를 줄이세요.
+            세트당 시간과 휴식은 내 기본 루틴에서 바꿀 수 있고, 바꾸면 위의 예상 시간에 바로
+            반영됩니다. 횟수를 채우고 먼저 끝나면 세트 완료를 누르고, 필요하면 +30초 더 또는
+            일시정지를 사용하세요.
           </Text>
           {routineCycle(preview).map((step) => (
             <View key={step}>
@@ -309,9 +343,9 @@ export function RoutinePlanner({
             </View>
           ))}
           <Text style={s.body}>
-            다음 순서는 직접 완료한 세트가 있는 루틴을 끝냈을 때의 예상입니다. 중간 종료·40분
-            종료만으로 순서를 넘기지 않아요. 큰 근육군을 고르게 훈련하고 꾸준히 이어가는 원칙을
-            참고한 FitIn 기본안이며, 개인별 회복·훈련량을 계산한 처방은 아닙니다.
+            다음 순서는 직접 완료한 세트가 있는 루틴을 끝냈을 때의 예상입니다. 중간 종료·이전 버전의
+            시간 제한 종료만으로 순서를 넘기지 않아요. 큰 근육군을 고르게 훈련하고 꾸준히 이어가는
+            원칙을 참고한 FitIn 기본안이며, 개인별 회복·훈련량을 계산한 처방은 아닙니다.
           </Text>
           <Pressable accessibilityRole="link" onPress={onSource}>
             <Text style={s.name}>루틴 구성 참고 · ACSM 안내 ↗</Text>

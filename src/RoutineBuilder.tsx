@@ -18,7 +18,7 @@ import {
   routineCycle,
   routineNames,
   Session,
-  TOTAL_SECONDS,
+  WORK_GOAL_SECONDS,
   validateTemplate,
 } from './workout';
 
@@ -68,7 +68,7 @@ export function RoutineBuilder({
     error = (e as Error).message;
   }
   const parts = planBreakdown(draft);
-  const over = parts.total - TOTAL_SECONDS;
+  const missingWork = Math.max(0, WORK_GOAL_SECONDS - parts.work);
   const stored = preferences.templates?.[target];
   const touch = (next: PlanItem[]) => {
     setDraft(next);
@@ -316,10 +316,14 @@ export function RoutineBuilder({
           <Text style={s.name}>합계</Text>
           <Text style={s.value}>{formatTime(parts.total)}</Text>
         </View>
-        <Text style={[s.meta, over > 0 && s.warn]}>
-          {over > 0
-            ? `40분보다 ${formatTime(over)} 많아요. 목표로 저장할 수 있고, 체크인할 때 40분까지만 할지 오늘만 줄일지 고릅니다.`
-            : `40분까지 여유 ${formatTime(-over)}`}
+        <Text style={[s.meta, missingWork > 0 && s.warn]}>
+          {missingWork > 0
+            ? `운동 구간 목표 25분까지 ${formatTime(missingWork)} 남음 · 종목·세트·시간을 직접 조절하세요.`
+            : '계획상 운동 구간 25분 목표 충족'}
+        </Text>
+        <Text style={s.meta}>
+          휴식·이동은 운동 구간에서 제외합니다. 전체 루틴이 끝날 때까지 진행하며 짧게 설정해도
+          저장할 수 있어요. 실제 수행은 완료 버튼으로 따로 기록합니다.
         </Text>
       </View>
       {error ? <Text style={s.warn}>{error}</Text> : null}
