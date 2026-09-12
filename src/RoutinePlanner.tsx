@@ -13,6 +13,7 @@ import {
   RecordEntry,
   resolvePlan,
   Routine,
+  MAX_CUSTOM_VISITS,
   routineCycle,
   routineNames,
   Split,
@@ -77,8 +78,16 @@ const programs: { split: Split; name: string; forWho: string; why: string; rhyth
     why: '가슴과 등을 번갈아 훈련하고 어깨·팔과 하체를 다른 방문으로 나눠요. 연속 상체 훈련 사이 회복을 고려하세요.',
     rhythm: '주 3회 예시 · 각 운동일 사이 휴식',
   },
+  {
+    split: 'custom',
+    name: '내가 만드는 루틴',
+    forWho: '방문 수와 구성을 직접 정하고 싶은 분',
+    why: '몇 번 방문을 한 바퀴로 볼지, 각 방문을 무엇으로 할지 직접 고릅니다. 각 방문의 운동 구성은 위의 내 기본 루틴에서 바꿔요.',
+    rhythm: '내가 정한 순서대로 방문마다 이어집니다',
+  },
 ];
 const visitLabels = ['오늘', '다음 방문', '다다음 방문'];
+const allRoutines = Object.keys(routineNames) as Routine[];
 
 export function RoutinePlanner({
   preferences,
@@ -99,7 +108,7 @@ export function RoutinePlanner({
   routine: Routine;
   today: PlanItem[];
   session: Session | null;
-  onChoose: (split: Split) => void;
+  onChoose: (split: Split, custom?: Routine[]) => void;
   onGuide: (id: MachineId) => void;
   onToday: () => void;
   onHistory: () => void;
@@ -110,8 +119,11 @@ export function RoutinePlanner({
   const [preview, setPreview] = useState<Split>(preferences.split);
   const [attendance, setAttendance] = useState<Attendance>('three');
   const [details, setDetails] = useState(false);
+  const [customDraft, setCustomDraft] = useState<Routine[]>(
+    preferences.customCycle?.length ? preferences.customCycle : ['fullA'],
+  );
   const active = !!session;
-  const cycle = routineCycle(preferences.split);
+  const cycle = routineCycle(preferences.split, preferences.customCycle);
   const start = Math.max(0, cycle.indexOf(routine));
   const chosen = programs.find((x) => x.split === preview)!;
   const last = history[history.length - 1];
@@ -125,10 +137,7 @@ export function RoutinePlanner({
       >
         <Text style={s.number}>{String(index + 1).padStart(2, '0')}</Text>
         <View style={{ flex: 1 }}>
-          <Text style={s.name}>
-            {machines[item.machine].name}
-            {item.finisher ? ' · 마무리' : ''}
-          </Text>
+          <Text style={s.name}>{machines[item.machine].name}</Text>
           <Text style={s.meta}>
             {machines[item.machine].area} · {item.sets}세트 · 세트당 {item.work}초 · 휴식{' '}
             {item.rest}초
@@ -143,48 +152,51 @@ export function RoutinePlanner({
       <Text style={s.title}>내 루틴</Text>
       <Text style={s.meta}>방문 순서대로 이어집니다. 날짜로 확정된 일정이 아니에요.</Text>
 
-      {[0, 1, 2].map((offset) => {
-        const step = cycle[(start + offset) % cycle.length];
-        const plan = offset === 0 ? today : resolvePlan(step, preferences);
-        const sessionSeconds = session
-          ? Math.min(
-              sessionLimit(session),
-              session.phases.reduce((sum, x) => sum + x.seconds, 0),
-            )
-          : 0;
-        const names =
-          offset === 0 && session
-            ? [
-                ...new Set(session.phases.filter((x) => x.kind === 'work').map((x) => x.machine)),
-              ].map((id) => machines[id].name)
-            : plan.map((x) => machines[x.machine].name);
-        return (
-          <View key={offset} style={[s.card, offset === 0 && s.now]}>
-            <View style={s.between}>
-              <Text style={s.heading}>
-                {offset === 0 && active ? '진행 중' : visitLabels[offset]} · {routineNames[step]}
-              </Text>
-              <Text style={s.value}>
-                {formatTime(offset === 0 && session ? sessionSeconds : planSeconds(plan))}
-              </Text>
-            </View>
-            <Text style={s.body}>{names.join(' · ')}</Text>
-            <Text style={s.meta}>
-              {offset === 0 && session
-                ? '실행 중인 세션'
-                : `운동 구간 ${formatTime(planBreakdown(plan).work)} · 휴식 ${formatTime(planBreakdown(plan).rest)}`}{' '}
-              · 예상 진행 시간
-            </Text>
-            {offset === 0 && (
-              <Pressable accessibilityRole="button" onPress={onToday} style={s.button}>
-                <Text style={s.name}>
-                  {active ? '진행 화면으로 →' : '오늘의 운동에서 확인·수정 →'}
+      {/* One card per visit in the cycle, capped at three: a two-day split has no 다다음 방문. */}
+      {Array.from({ length: Math.min(visitLabels.length, cycle.length) }, (_, i) => i).map(
+        (offset) => {
+          const step = cycle[(start + offset) % cycle.length];
+          const plan = offset === 0 ? today : resolvePlan(step, preferences);
+          const sessionSeconds = session
+            ? Math.min(
+                sessionLimit(session),
+                session.phases.reduce((sum, x) => sum + x.seconds, 0),
+              )
+            : 0;
+          const names =
+            offset === 0 && session
+              ? [
+                  ...new Set(session.phases.filter((x) => x.kind === 'work').map((x) => x.machine)),
+                ].map((id) => machines[id].name)
+              : plan.map((x) => machines[x.machine].name);
+          return (
+            <View key={offset} style={[s.card, offset === 0 && s.now]}>
+              <View style={s.between}>
+                <Text style={s.heading}>
+                  {offset === 0 && active ? '진행 중' : visitLabels[offset]} · {routineNames[step]}
                 </Text>
-              </Pressable>
-            )}
-          </View>
-        );
-      })}
+                <Text style={s.value}>
+                  {formatTime(offset === 0 && session ? sessionSeconds : planSeconds(plan))}
+                </Text>
+              </View>
+              <Text style={s.body}>{names.join(' · ')}</Text>
+              <Text style={s.meta}>
+                {offset === 0 && session
+                  ? '실행 중인 세션'
+                  : `운동 구간 ${formatTime(planBreakdown(plan).work)} · 휴식 ${formatTime(planBreakdown(plan).rest)}`}{' '}
+                · 예상 진행 시간
+              </Text>
+              {offset === 0 && (
+                <Pressable accessibilityRole="button" onPress={onToday} style={s.button}>
+                  <Text style={s.name}>
+                    {active ? '진행 화면으로 →' : '오늘의 운동에서 확인·수정 →'}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          );
+        },
+      )}
 
       <RoutineBuilder
         preferences={preferences}
@@ -215,21 +227,73 @@ export function RoutinePlanner({
           ))}
         </View>
         <Text style={s.meta}>
-          {routineCycle(preview)
+          {routineCycle(preview, customDraft)
             .map(
               (step) =>
                 `${routineNames[step]} · 운동 ${formatTime(planBreakdown(resolvePlan(step, { ...preferences, split: preview })).work)} / 전체 ${formatTime(planSeconds(resolvePlan(step, { ...preferences, split: preview })))}`,
             )
             .join('  ·  ')}
         </Text>
+        {preview === 'custom' && (
+          <View style={s.custom}>
+            <Text style={s.heading}>한 바퀴를 몇 번 방문으로 돌까요?</Text>
+            <View style={s.chips}>
+              {Array.from({ length: MAX_CUSTOM_VISITS }, (_, i) => i + 1).map((count) => (
+                <Pressable
+                  key={count}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: customDraft.length === count }}
+                  accessibilityLabel={`${count}번 방문으로 구성`}
+                  onPress={() =>
+                    setCustomDraft((current) =>
+                      Array.from({ length: count }, (_, i) => current[i] ?? allRoutines[0]),
+                    )
+                  }
+                  style={[s.chip, customDraft.length === count && s.selected]}
+                >
+                  <Text style={s.name}>{count}번 방문</Text>
+                </Pressable>
+              ))}
+            </View>
+            {customDraft.map((step, visit) => (
+              <View key={visit} style={{ gap: 8 }}>
+                <Text style={s.heading}>
+                  {visitLabels[visit] ?? `${visit + 1}번째 방문`} · {routineNames[step]}
+                </Text>
+                <Text style={s.meta}>{routinePurpose[step]}</Text>
+                <View style={s.chips}>
+                  {allRoutines.map((id) => (
+                    <Pressable
+                      key={id}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: step === id }}
+                      accessibilityLabel={`${visit + 1}번째 방문을 ${routineNames[id]}로`}
+                      onPress={() =>
+                        setCustomDraft((current) => current.map((x, i) => (i === visit ? id : x)))
+                      }
+                      style={[s.chip, step === id && s.selected]}
+                    >
+                      <Text style={s.name}>{routineNames[id]}</Text>
+                      <Text style={s.meta}>{routinePurpose[id]}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ))}
+            <Text style={s.meta}>
+              같은 구성을 여러 방문에 넣어도 됩니다. 각 방문의 운동 종목과 세트는 위의 내 기본
+              루틴에서 방문별로 따로 저장해요.
+            </Text>
+          </View>
+        )}
         <Text style={s.meta}>
-          분할 방식은 여기서 선택해요. 저장한 종목·마무리 운동은 유지하고, 새로 선택한 구성만
+          분할 방식은 여기서 선택해요. 저장한 종목과 추가한 운동은 유지하고, 새로 선택한 구성만
           기본안으로 시작합니다. 수정한 날의 기본안은 위 편집기에서 되돌릴 수 있어요.
         </Text>
         <Pressable
           disabled={active}
           accessibilityRole="button"
-          onPress={() => onChoose(preview)}
+          onPress={() => onChoose(preview, preview === 'custom' ? customDraft : undefined)}
           style={[s.button, active && { opacity: 0.4 }]}
         >
           <Text style={s.name}>
@@ -313,7 +377,7 @@ export function RoutinePlanner({
             반영됩니다. 횟수를 채우고 먼저 끝나면 세트 완료를 누르고, 필요하면 +30초 더 또는
             일시정지를 사용하세요.
           </Text>
-          {routineCycle(preview).map((step) => (
+          {routineCycle(preview, customDraft).map((step) => (
             <View key={step}>
               <Text style={s.heading}>
                 {routineNames[step]} · {formatTime(planSeconds(defaultPlan(step)))} ·{' '}
@@ -389,4 +453,15 @@ const s = StyleSheet.create({
     backgroundColor: 'white',
   },
   selected: { borderColor: '#648A7A', backgroundColor: '#EFF5EF' },
+  custom: { gap: 12, backgroundColor: '#F4F7F4', borderRadius: 14, padding: 16 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    gap: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#E3EAE6',
+    backgroundColor: 'white',
+  },
 });

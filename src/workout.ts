@@ -8,6 +8,9 @@ export const WORK_GOAL_SECONDS = 25 * 60;
 /** Bounds editable membership and persisted phase count, independent of duration. */
 export const MAX_ITEMS = 12;
 export const REST_CHOICES = [45, 60, 75, 90, 105, 120, 150, 180];
+/** Editor steps. Work is fine-grained because a few seconds a set changes the session total. */
+export const WORK_STEP = 5;
+export const REST_STEP = 15;
 export const machines = {
   chestPress: {
     name: '체스트 프레스',
@@ -260,7 +263,7 @@ export const machines = {
 export type MachineId = keyof typeof machines;
 export type Level = 'beginner' | 'intermediate' | 'advanced';
 export type Split =
-  'full' | 'upperLower' | 'ppl' | 'fixed' | 'mixedFull' | 'torsoLimbs' | 'bodyPart';
+  'full' | 'upperLower' | 'ppl' | 'fixed' | 'mixedFull' | 'torsoLimbs' | 'bodyPart' | 'custom';
 export type Routine =
   | 'fullA'
   | 'fullB'
@@ -277,15 +280,15 @@ export type Routine =
   | 'shoulderArms';
 /**
  * `rest` and `work` are always the effective seconds for this item.
- * `finisher` marks an explicit end-of-session addition: only finishers may repeat a movement.
  * `restOverride` opts the item out of global rest propagation.
+ * A movement may appear more than once: the user adds a repeat deliberately, and each occurrence
+ * gets its own phases and its own records. Generated plans never produce one.
  */
 export type PlanItem = {
   machine: MachineId;
   sets: number;
   rest: number;
   work: number;
-  finisher?: boolean;
   restOverride?: boolean;
 };
 export type Preferences = {
@@ -298,6 +301,8 @@ export type Preferences = {
   globalRest: number;
   /** Persistent goal templates per routine. Today's copy is derived, never stored here. */
   templates: Partial<Record<Routine, PlanItem[]>>;
+  /** The visit order when `split` is `custom`. Absent elsewhere, and never auto-populated. */
+  customCycle?: Routine[];
 };
 export const defaultPreferences: Preferences = {
   level: 'beginner',
@@ -390,7 +395,14 @@ export const routineNames: Record<Routine, string> = {
   chestBack: '가슴·등',
   shoulderArms: '어깨·팔',
 };
-export function routineCycle(split: Split): Routine[] {
+/** Upper bound on a user-defined cycle; the visit cards show at most this many. */
+export const MAX_CUSTOM_VISITS = 3;
+/**
+ * `custom` is the user's own cycle: they choose how many visits it has and what each one is, and
+ * the routine builder owns the contents of each. Every other split is a fixed product example.
+ */
+export function routineCycle(split: Split, custom?: Routine[]): Routine[] {
+  if (split === 'custom') return custom?.length ? custom.slice(0, MAX_CUSTOM_VISITS) : ['fullA'];
   if (split === 'mixedFull') return ['mixedA', 'mixedB'];
   if (split === 'torsoLimbs') return ['torso', 'limbs'];
   if (split === 'bodyPart') return ['chestBack', 'shoulderArms', 'legs'];
@@ -402,8 +414,12 @@ export function routineCycle(split: Split): Routine[] {
         ? ['fullA']
         : ['fullA', 'fullB'];
 }
-export function nextRoutine(history: RecordEntry[], split: Split = 'full'): Routine {
-  const cycle = routineCycle(split);
+export function nextRoutine(
+  history: RecordEntry[],
+  split: Split = 'full',
+  custom?: Routine[],
+): Routine {
+  const cycle = routineCycle(split, custom);
   const last = [...history]
     .reverse()
     .find((r) => r.completed && r.confirmedSets > 0 && cycle.includes(r.routine));
@@ -477,9 +493,7 @@ export function planSeconds(items: PlanItem[]) {
   return planBreakdown(items).total;
 }
 function checkItems(items: PlanItem[]): void {
-  const shapeError = Error(
-    '종목은 1–12개, 세트 1–5개, 운동 20–180초, 휴식 30–180초로 설정하세요. 같은 운동은 마무리 종목으로만 반복할 수 있어요.',
-  );
+  const shapeError = Error('종목은 1–12개, 세트 1–5개, 운동 20–180초, 휴식 30–180초로 설정하세요.');
   if (
     !Array.isArray(items) ||
     items.length < 1 ||
@@ -497,16 +511,10 @@ function checkItems(items: PlanItem[]): void {
         !Number.isInteger(x.rest) ||
         x.rest < 30 ||
         x.rest > 180 ||
-        (x.finisher !== undefined && typeof x.finisher !== 'boolean') ||
         (x.restOverride !== undefined && typeof x.restOverride !== 'boolean'),
     )
   )
     throw shapeError;
-  const seen = new Set<MachineId>();
-  for (const x of items) {
-    if (seen.has(x.machine) && !x.finisher) throw shapeError;
-    seen.add(x.machine);
-  }
 }
 /** Templates and new sessions share shape validation, without a total-duration cap. */
 export function validateTemplate(items: PlanItem[]): void {
@@ -522,7 +530,7 @@ export function withStarters(
 ): { items: PlanItem[]; replaced: MachineId[] } {
   const result = items.map((x) => ({ ...x }));
   const replaced: MachineId[] = [];
-  const open = (x: PlanItem) => !starters.includes(x.machine) && !x.finisher;
+  const open = (x: PlanItem) => !starters.includes(x.machine);
   for (const machine of [...new Set(starters)]) {
     if (result.some((x) => x.machine === machine)) continue;
     let index = result.findIndex(
@@ -537,9 +545,8 @@ export function withStarters(
     replaced.push(result[index].machine);
     result[index] = { ...result[index], machine };
   }
-  // Finishers stay pinned at the end; a starter preference never pulls one forward.
+  // Sorting is stable, so everything the user did not pick as a starter keeps its own order.
   const rank = (x: PlanItem) => {
-    if (x.finisher) return 1000;
     const at = starters.indexOf(x.machine);
     return at < 0 ? 99 : at;
   };
@@ -552,7 +559,7 @@ export function buildPhases(items: PlanItem[]): Phase[] {
   const phases: Phase[] = [
     { id: 'prepare', kind: 'prepare', seconds: 10, machine: items[0].machine },
   ];
-  // The plan index prefixes every id so a repeated finisher keeps distinct phases and records.
+  // The plan index prefixes every id so a repeated movement keeps distinct phases and records.
   items.forEach((x, i) => {
     if (i > 0)
       phases.push({

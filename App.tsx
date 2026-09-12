@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
   Linking,
@@ -31,6 +31,8 @@ import {
   machines,
   markRestOverrides,
   MAX_ITEMS,
+  REST_STEP,
+  WORK_STEP,
   nextRoutine,
   PlanItem,
   planBreakdown,
@@ -82,14 +84,16 @@ function FitIn() {
     [personal, setPersonal] = useState(false),
     [draft, setDraft] = useState<MachineId[]>([]),
     [replace, setReplace] = useState<number | null>(null),
-    [append, setAppend] = useState<null | 'main' | 'finisher'>(null),
+    [append, setAppend] = useState(false),
+    [appendRepeat, setAppendRepeat] = useState(false),
     [guide, setGuide] = useState<MachineId | null>(null),
     [stopConfirm, setStopConfirm] = useState(false),
     [removing, setRemoving] = useState<null | { id: string; label: string } | 'all'>(null),
     [notice, setNotice] = useState('');
   const wide = useWindowDimensions().width >= 900;
+  const page = useRef<ScrollView>(null);
   const session = data.session;
-  const routine = nextRoutine(data.history, data.preferences.split);
+  const routine = nextRoutine(data.history, data.preferences.split, data.preferences.customCycle);
   const [selected, setSelected] = useState<MachineId>('legPress');
   useEffect(() => {
     const next = resolvePlan(routine, data.preferences);
@@ -141,18 +145,12 @@ function FitIn() {
     );
   }
   /** Today's copy only. The persistent template is written from the routine builder. */
-  function addToday(machine: MachineId, finisher: boolean) {
+  function addToday(machine: MachineId) {
     setItems((current) => [
       ...current,
-      {
-        machine,
-        sets: 3,
-        work: DEFAULT_WORK,
-        rest: data.preferences.globalRest,
-        ...(finisher ? { finisher: true } : {}),
-      },
+      { machine, sets: 3, work: DEFAULT_WORK, rest: data.preferences.globalRest },
     ]);
-    setAppend(null);
+    setAppend(false);
   }
   function saveTemplate(target: Routine, plan: PlanItem[], globalRest: number) {
     w.setData((d) => ({
@@ -184,14 +182,20 @@ function FitIn() {
     );
     setEdit(false);
   }
-  function chooseRoutine(split: Split) {
+  function chooseRoutine(split: Split, custom?: Routine[]) {
     if (session) return;
     w.setData((d) => ({
       ...d,
-      preferences: { ...d.preferences, split },
+      preferences: {
+        ...d.preferences,
+        split,
+        ...(split === 'custom' ? { customCycle: custom?.length ? custom : ['fullA'] } : {}),
+      },
     }));
-    setTab('today');
-    setNotice('선택한 루틴을 적용했어요. 오늘 순서를 확인하고 체크인하세요.');
+    // Stay here and return to the top. The next thing to do is check the new visit order and edit
+    // each visit in the builder, not check in.
+    page.current?.scrollTo({ y: 0, animated: true });
+    setNotice('선택한 루틴을 적용했어요. 위 내 기본 루틴에서 방문별 구성을 확인하고 저장하세요.');
   }
   function openExternal(url: string) {
     if (session && !session.paused) w.command('pause');
@@ -252,7 +256,7 @@ function FitIn() {
   return (
     <SafeAreaView style={s.safe}>
       <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={[s.container, wide && s.desktop]}>
+      <ScrollView ref={page} contentContainerStyle={[s.container, wide && s.desktop]}>
         <View style={s.header}>
           <Text style={s.logo}>
             fit<Text style={{ color: '#E97860' }}>in.</Text>
@@ -589,10 +593,7 @@ function FitIn() {
                             >
                               <Text style={s.order}>{String(i + 1).padStart(2, '0')}</Text>
                               <View style={{ flex: 1 }}>
-                                <Text style={s.rowTitle}>
-                                  {machines[x.machine].name}
-                                  {x.finisher ? ' · 마무리' : ''}
-                                </Text>
+                                <Text style={s.rowTitle}>{machines[x.machine].name}</Text>
                                 <Text style={s.small}>
                                   {x.sets}세트 · 세트당 {x.work}초 · 휴식 {x.rest}초
                                 </Text>
@@ -783,7 +784,7 @@ function FitIn() {
           setGuide(null);
           setStopConfirm(false);
           setReplace(null);
-          setAppend(null);
+          setAppend(false);
           setRemoving(null);
         }}
       >
@@ -812,7 +813,7 @@ function FitIn() {
                   setGuide(null);
                   setStopConfirm(false);
                   setReplace(null);
-                  setAppend(null);
+                  setAppend(false);
                   setRemoving(null);
                 }}
                 style={s.close}
@@ -943,8 +944,7 @@ function FitIn() {
                           style={s.linkButton}
                         >
                           <Text style={s.rowTitle}>
-                            {i + 1}. {machines[x.machine].name}
-                            {x.finisher ? ' · 마무리' : ''} ⇄
+                            {i + 1}. {machines[x.machine].name} ⇄
                           </Text>
                         </Pressable>
                         <View style={s.actionRow}>
@@ -980,7 +980,7 @@ function FitIn() {
                       {replace === i && (
                         <View style={s.chips}>
                           {(Object.keys(machines) as MachineId[])
-                            .filter((id) => x.finisher || !items.some((y) => y.machine === id))
+                            .filter((id) => !items.some((y) => y.machine === id))
                             .map((id) => (
                               <Pressable
                                 accessibilityRole="button"
@@ -1010,13 +1010,13 @@ function FitIn() {
                         <View style={s.actionRow}>
                           <Button
                             secondary
-                            label="운동 −15"
-                            onPress={() => change(i, 'work', -15)}
+                            label={`운동 −${WORK_STEP}`}
+                            onPress={() => change(i, 'work', -WORK_STEP)}
                           />
                           <Button
                             secondary
-                            label="운동 +15"
-                            onPress={() => change(i, 'work', 15)}
+                            label={`운동 +${WORK_STEP}`}
+                            onPress={() => change(i, 'work', WORK_STEP)}
                           />
                         </View>
                       </View>
@@ -1025,50 +1025,52 @@ function FitIn() {
                         <View style={s.actionRow}>
                           <Button
                             secondary
-                            label="휴식 −15"
-                            onPress={() => change(i, 'rest', -15)}
+                            label={`휴식 −${REST_STEP}`}
+                            onPress={() => change(i, 'rest', -REST_STEP)}
                           />
                           <Button
                             secondary
-                            label="휴식 +15"
-                            onPress={() => change(i, 'rest', 15)}
+                            label={`휴식 +${REST_STEP}`}
+                            onPress={() => change(i, 'rest', REST_STEP)}
                           />
                         </View>
                       </View>
                     </View>
                   ))}
-                  <View style={s.actionRow}>
-                    <Button
-                      secondary
-                      disabled={items.length >= MAX_ITEMS}
-                      label="+ 오늘만 운동 추가"
-                      onPress={() => setAppend(append === 'main' ? null : 'main')}
-                    />
-                    <Button
-                      secondary
-                      disabled={items.length >= MAX_ITEMS}
-                      label="+ 마지막 마무리 운동"
-                      onPress={() => setAppend(append === 'finisher' ? null : 'finisher')}
-                    />
-                  </View>
+                  <Button
+                    secondary
+                    disabled={items.length >= MAX_ITEMS}
+                    label={append ? '운동 추가 닫기' : '+ 오늘만 운동 추가'}
+                    onPress={() => setAppend(!append)}
+                  />
                   {append && (
                     <>
+                      <Pressable
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: appendRepeat }}
+                        accessibilityLabel="이미 넣은 운동도 다시 추가"
+                        onPress={() => setAppendRepeat(!appendRepeat)}
+                        style={s.check}
+                      >
+                        <View style={[s.box, appendRepeat && s.boxOn]}>
+                          <Text style={s.tick}>{appendRepeat ? '✓' : ' '}</Text>
+                        </View>
+                        <Text style={s.rowTitle}>이미 넣은 운동도 다시 추가</Text>
+                      </Pressable>
                       <Text style={s.helper}>
-                        {append === 'finisher'
-                          ? '맨 뒤에 붙습니다. 마무리로는 같은 운동을 한 번 더 넣을 수 있어요.'
+                        {appendRepeat
+                          ? '같은 운동을 한 번 더 넣습니다. 세트 기록은 각각 따로 남아요.'
                           : '맨 뒤에 추가한 뒤 ↑로 원하는 자리에 올리세요.'}
                       </Text>
                       <View style={s.chips}>
                         {(Object.keys(machines) as MachineId[])
-                          .filter(
-                            (id) => append === 'finisher' || !items.some((x) => x.machine === id),
-                          )
+                          .filter((id) => appendRepeat || !items.some((x) => x.machine === id))
                           .map((id) => (
                             <Pressable
                               accessibilityRole="button"
                               style={s.chip}
                               key={id}
-                              onPress={() => addToday(id, append === 'finisher')}
+                              onPress={() => addToday(id)}
                             >
                               <Text>{machines[id].name}</Text>
                             </Pressable>
@@ -1091,7 +1093,7 @@ function FitIn() {
                     label="오늘만 적용"
                     onPress={() => {
                       setEdit(false);
-                      setAppend(null);
+                      setAppend(false);
                       setSelected(items[0].machine);
                     }}
                   />
@@ -1308,6 +1310,18 @@ const s = StyleSheet.create({
   },
   warning: { backgroundColor: '#F7E8DE', padding: 16, borderRadius: 13, marginTop: 15 },
   close: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  check: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 },
+  box: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#B9C9C0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boxOn: { borderColor: '#648A7A', backgroundColor: '#DAE9DF' },
+  tick: { fontSize: 13, lineHeight: 16, color: '#244348', fontWeight: '700' },
   record: { padding: 24, borderRadius: 18, backgroundColor: 'white', marginBottom: 14, gap: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   chip: {

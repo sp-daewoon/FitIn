@@ -36,6 +36,14 @@ Apple Health remains optional planned integration; no health data is accessed. F
 
 Backgrounding the app or turning off the screen keeps the session clock running: the process is alive and the user is still in the gym with the phone in a pocket. A cold start after the process died is different, because nothing was measuring that gap. The session pauses, the gap is excluded from workout time, and the user is asked whether the session really was running, for example on a watch. The app does not guess: it states what it knows, defaults to the conservative answer, and neither answer adds or removes a confirmed set. Once a Watch client exists it keeps its own heartbeat, so a watch-driven session is not treated as abandoned.
 
+The routine page shows one card per visit in the cycle, capped at three: a two-visit split has 오늘 and 다음 방문 and no 다다음 방문, a one-visit split has only 오늘. Do not pad the list with a visit the cycle does not contain.
+
+Program styles are fixed product examples with one exception. `custom` is the user's own cycle: they choose how many visits it has, up to three, and what each visit is, and the routine builder owns each visit's contents. Nothing populates it automatically, and switching program styles preserves saved templates.
+
+A movement may appear more than once in a plan when the user adds the repeat deliberately, through an explicit "이미 넣은 운동도 다시 추가" choice in the add-exercise control. Each occurrence gets its own phases and its own set records. Generated plans never produce a repeat, which is asserted by test rather than by validation. There is no separate "finisher" concept: adding an exercise and moving it to the end is the same action.
+
+Editor steps are asymmetric on purpose: work duration moves in 5-second steps because a few seconds per set changes the whole session total, while rest moves in 15-second steps.
+
 Workout records belong to the user and can be deleted one at a time or all at once. Deletion is confirmed first, says it cannot be undone, and never touches a running session or saved routines. The next routine is recomputed from the records that remain, so removing the latest visit can move the cycle back a step; the app does not rewrite history to keep the order looking continuous.
 
 Explicit set completion, automatic time passage, user stop and legacy budget cutoff are distinct. `fitin.v4` migrates v2/v3 in memory while preserving original keys, paused sessions, phase IDs and custom rest/templates. v1 remains separately preserved. See [session architecture](architecture/SESSION.md).

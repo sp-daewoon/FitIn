@@ -2,6 +2,7 @@ import {
   Data,
   DEFAULT_REST,
   machines,
+  MAX_CUSTOM_VISITS,
   PlanItem,
   Preferences,
   TOTAL_SECONDS,
@@ -47,9 +48,21 @@ export function decode(raw: string): Data {
   const pref = d.preferences;
   if (
     !['beginner', 'intermediate', 'advanced'].includes(pref.level) ||
-    !['full', 'upperLower', 'ppl', 'fixed', 'mixedFull', 'torsoLimbs', 'bodyPart'].includes(
-      pref.split,
-    ) ||
+    ![
+      'full',
+      'upperLower',
+      'ppl',
+      'fixed',
+      'mixedFull',
+      'torsoLimbs',
+      'bodyPart',
+      'custom',
+    ].includes(pref.split) ||
+    (pref.customCycle !== undefined &&
+      (!Array.isArray(pref.customCycle) ||
+        pref.customCycle.length < 1 ||
+        pref.customCycle.length > MAX_CUSTOM_VISITS ||
+        !pref.customCycle.every((r: unknown) => typeof r === 'string' && routines.includes(r)))) ||
     !Array.isArray(pref.starters) ||
     pref.starters.length > 3 ||
     !pref.starters.every(machine) ||

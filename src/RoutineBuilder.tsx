@@ -13,6 +13,8 @@ import {
   planBreakdown,
   Preferences,
   REST_CHOICES,
+  REST_STEP,
+  WORK_STEP,
   resolveTemplate,
   Routine,
   routineCycle,
@@ -44,22 +46,29 @@ export function RoutineBuilder({
   onReset: (routine: Routine) => void;
   onGuide: (id: MachineId) => void;
 }) {
-  const cycle = routineCycle(preferences.split);
+  const cycle = routineCycle(preferences.split, preferences.customCycle);
   const [target, setTarget] = useState<Routine>(routine);
   const load = (target: Routine, from: Preferences) =>
     markRestOverrides(resolveTemplate(target, from), from.globalRest ?? DEFAULT_REST);
   const [draft, setDraft] = useState<PlanItem[]>(() => load(routine, preferences));
   const [rest, setRest] = useState(preferences.globalRest ?? DEFAULT_REST);
-  const [adding, setAdding] = useState<null | 'main' | 'finisher'>(null);
+  const [adding, setAdding] = useState(false);
+  const [allowRepeat, setAllowRepeat] = useState(false);
   const [saved, setSaved] = useState(false);
   useEffect(() => {
     const next = cycle.includes(target) ? target : cycle[0];
     if (next !== target) setTarget(next);
     setDraft(load(next, preferences));
     setRest(preferences.globalRest ?? DEFAULT_REST);
-    setAdding(null);
+    setAdding(false);
     setSaved(false);
-  }, [target, preferences.split, preferences.templates, preferences.globalRest]);
+  }, [
+    target,
+    preferences.split,
+    preferences.customCycle,
+    preferences.templates,
+    preferences.globalRest,
+  ]);
 
   let error = '';
   try {
@@ -87,20 +96,11 @@ export function RoutineBuilder({
     setSaved(false);
   };
   const add = (machine: MachineId) => {
-    touch([
-      ...draft,
-      {
-        machine,
-        sets: 3,
-        work: DEFAULT_WORK,
-        rest,
-        ...(adding === 'finisher' ? { finisher: true } : {}),
-      },
-    ]);
-    setAdding(null);
+    touch([...draft, { machine, sets: 3, work: DEFAULT_WORK, rest }]);
+    setAdding(false);
   };
   const options = (Object.keys(machines) as MachineId[]).filter(
-    (id) => adding === 'finisher' || !draft.some((x) => x.machine === id),
+    (id) => allowRepeat || !draft.some((x) => x.machine === id),
   );
 
   return (
@@ -147,7 +147,7 @@ export function RoutineBuilder({
           <View style={s.between}>
             <Pressable accessibilityRole="button" onPress={() => onGuide(x.machine)}>
               <Text style={s.name}>
-                {i + 1}. {machines[x.machine].name} {x.finisher ? '· 마무리' : ''} ↗
+                {i + 1}. {machines[x.machine].name} ↗
               </Text>
               <Text style={s.meta}>{machines[x.machine].area}</Text>
             </Pressable>
@@ -208,18 +208,18 @@ export function RoutineBuilder({
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`${machines[x.machine].name} 세트 시간 줄이기`}
-                onPress={() => update(i, { work: step(x.work, -15, 20, 180) })}
+                onPress={() => update(i, { work: step(x.work, -WORK_STEP, 20, 180) })}
                 style={s.mini}
               >
-                <Text>−15</Text>
+                <Text>−{WORK_STEP}</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`${machines[x.machine].name} 세트 시간 늘리기`}
-                onPress={() => update(i, { work: step(x.work, 15, 20, 180) })}
+                onPress={() => update(i, { work: step(x.work, WORK_STEP, 20, 180) })}
                 style={s.mini}
               >
-                <Text>+15</Text>
+                <Text>+{WORK_STEP}</Text>
               </Pressable>
             </View>
           </View>
@@ -244,18 +244,18 @@ export function RoutineBuilder({
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`${machines[x.machine].name} 휴식 줄이기`}
-                    onPress={() => update(i, { rest: step(x.rest, -15, 30, 180) })}
+                    onPress={() => update(i, { rest: step(x.rest, -REST_STEP, 30, 180) })}
                     style={s.mini}
                   >
-                    <Text>−15</Text>
+                    <Text>−{REST_STEP}</Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`${machines[x.machine].name} 휴식 늘리기`}
-                    onPress={() => update(i, { rest: step(x.rest, 15, 30, 180) })}
+                    onPress={() => update(i, { rest: step(x.rest, REST_STEP, 30, 180) })}
                     style={s.mini}
                   >
-                    <Text>+15</Text>
+                    <Text>+{REST_STEP}</Text>
                   </Pressable>
                 </>
               )}
@@ -264,29 +264,31 @@ export function RoutineBuilder({
         </View>
       ))}
 
-      <View style={s.row}>
-        <Pressable
-          disabled={draft.length >= MAX_ITEMS}
-          accessibilityRole="button"
-          onPress={() => setAdding(adding === 'main' ? null : 'main')}
-          style={[s.button, draft.length >= MAX_ITEMS && s.off]}
-        >
-          <Text style={s.name}>+ 운동 추가</Text>
-        </Pressable>
-        <Pressable
-          disabled={draft.length >= MAX_ITEMS}
-          accessibilityRole="button"
-          onPress={() => setAdding(adding === 'finisher' ? null : 'finisher')}
-          style={[s.button, draft.length >= MAX_ITEMS && s.off]}
-        >
-          <Text style={s.name}>+ 마지막 마무리 운동</Text>
-        </Pressable>
-      </View>
+      <Pressable
+        disabled={draft.length >= MAX_ITEMS}
+        accessibilityRole="button"
+        onPress={() => setAdding(!adding)}
+        style={[s.button, draft.length >= MAX_ITEMS && s.off]}
+      >
+        <Text style={s.name}>{adding ? '운동 추가 닫기' : '+ 운동 추가'}</Text>
+      </Pressable>
       {adding && (
         <>
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: allowRepeat }}
+            accessibilityLabel="이미 넣은 운동도 다시 추가"
+            onPress={() => setAllowRepeat(!allowRepeat)}
+            style={s.check}
+          >
+            <View style={[s.box, allowRepeat && s.boxOn]}>
+              <Text style={s.tick}>{allowRepeat ? '✓' : ' '}</Text>
+            </View>
+            <Text style={s.name}>이미 넣은 운동도 다시 추가</Text>
+          </Pressable>
           <Text style={s.meta}>
-            {adding === 'finisher'
-              ? '맨 뒤에 붙습니다. 마무리로는 같은 운동을 한 번 더 넣을 수 있어요. 데드리프트처럼 끝에 몰아서 하는 운동을 여러 개 넣어도 됩니다.'
+            {allowRepeat
+              ? '같은 운동을 한 번 더 넣습니다. 세트 기록은 각각 따로 남아요.'
               : '맨 뒤에 추가한 뒤 순서를 올려 원하는 자리에 두세요.'}
           </Text>
           <View style={s.chips}>
@@ -389,5 +391,17 @@ const s = StyleSheet.create({
   },
   budget: { backgroundColor: '#F4F7F4', borderRadius: 14, padding: 16, gap: 8 },
   on: { borderColor: '#648A7A', backgroundColor: '#DAE9DF' },
+  check: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 },
+  box: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#B9C9C0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boxOn: { borderColor: '#648A7A', backgroundColor: '#DAE9DF' },
+  tick: { fontSize: 13, lineHeight: 16, color: '#244348', fontWeight: '700' },
   off: { opacity: 0.4 },
 });
