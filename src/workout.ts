@@ -469,12 +469,6 @@ export function planBreakdown(items: PlanItem[]) {
 export function planSeconds(items: PlanItem[]) {
   return planBreakdown(items).total;
 }
-/** Longest leading run that fits the cap. Dropped items are reported, never silently removed. */
-export function capPlan(items: PlanItem[]): { items: PlanItem[]; dropped: PlanItem[] } {
-  const kept = [...items];
-  while (kept.length > 1 && planSeconds(kept) > TOTAL_SECONDS) kept.pop();
-  return { items: kept, dropped: items.slice(kept.length) };
-}
 function checkItems(items: PlanItem[]): void {
   const shapeError = Error(
     '종목은 1–12개, 세트 1–5개, 운동 20–180초, 휴식 30–180초로 설정하세요. 같은 운동은 마무리 종목으로만 반복할 수 있어요.',

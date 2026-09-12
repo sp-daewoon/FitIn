@@ -6,7 +6,6 @@ import {
   applyGlobalRest,
   begin,
   buildPhases,
-  capPlan,
   DEFAULT_REST,
   defaultPlan,
   defaultPreferences,
@@ -102,27 +101,40 @@ test('per-exercise work duration changes only that exercise time', () => {
   assert.equal(a.setup + a.work + a.rest + a.move, planSeconds(before));
 });
 
-test('new execution accepts long templates; legacy capping helper reports dropped items', () => {
-  const overCap = [
+test('a plan longer than forty minutes runs to its end instead of being truncated', () => {
+  const long = [
     ...defaultPlan('fullA'),
     item('deadlift', { finisher: true, sets: 4, work: 90, rest: 150 }),
     item('barbellRow', { finisher: true, sets: 4, work: 90, rest: 150 }),
   ];
-  assert.ok(planSeconds(overCap) > TOTAL_SECONDS);
-  validateTemplate(overCap);
-  validatePlan(overCap);
-  assert.ok(position(begin('fullA', overCap, 0), 2400000).phase);
-  const capped = capPlan(overCap);
-  assert.ok(planSeconds(capped.items) <= TOTAL_SECONDS);
-  assert.ok(capped.dropped.length > 0, 'dropped items are reported, not silently removed');
-  assert.deepEqual(
-    [...capped.items, ...capped.dropped].map((x) => x.machine),
-    overCap.map((x) => x.machine),
+  const total = planSeconds(long);
+  assert.ok(total > TOTAL_SECONDS, 'the fixture is deliberately past the old cap');
+  validateTemplate(long);
+  validatePlan(long);
+
+  const session = begin('fullA', long, 0);
+  assert.equal(session.timeLimit, null, 'a new session carries no time limit');
+  assert.equal(
+    session.phases.reduce((n, x) => n + x.seconds, 0),
+    total,
+    'every planned second reaches the session; nothing is dropped',
   );
-  capped.items.forEach((x, i) => assert.equal(x.rest, overCap[i].rest, 'rest is never compressed'));
-  validatePlan(capped.items);
-  // A plan that already fits is returned untouched.
-  assert.deepEqual(capPlan(defaultPlan('fullA')).dropped, []);
+  assert.deepEqual(
+    [...new Set(session.phases.filter((x) => x.kind === 'work').map((x) => x.machine))],
+    [...new Set(long.map((x) => x.machine))],
+    'every movement including both finishers is present',
+  );
+
+  // Forty minutes is a default planning figure, not a cutoff: the session is still running there.
+  const atOldCap = position(session, TOTAL_SECONDS * 1000);
+  assert.ok(atOldCap.phase, 'the session does not end at forty minutes');
+  // The final finisher is reachable, and the session ends only when the plan ends.
+  assert.equal(position(session, (total - 1) * 1000).phase?.machine, 'barbellRow');
+  assert.equal(position(session, (total + 1) * 1000).phase, null);
+
+  // A migrated session keeps the cap it was created under.
+  const migrated = { ...session, timeLimit: TOTAL_SECONDS };
+  assert.equal(position(migrated, (total - 1) * 1000).phase, null);
 });
 
 test('starter preferences never replace or reorder a finisher', () => {

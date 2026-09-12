@@ -14,8 +14,8 @@ Status: **implemented** on 2026-09-12 as development version 0.0.2; see [the 0.0
 
 - Global rest starts at 90 seconds and applies to every set until the user enables an exercise-specific override.
 - Each exercise has editable work duration, starting at 60 seconds. “Exercise time” and “rest/transition time” are shown separately.
-- Display planned active time, exercise time, rest time, transition time and remaining/over-cap amount before save and before check-in.
-- A goal template may exceed 40 minutes so it faithfully represents the user's target. At check-in, require a choice to run the copy to the 40-minute cap (remaining items explicitly unperformed) or shorten only today's copy. Never silently compress rest or drop finishers.
+- Display planned active time, exercise time, rest time and transition time before save and before check-in. The forty-minute figure may be shown as a reference point, never as a limit that truncates the plan.
+- **Superseded on 2026-09-12.** Forty minutes is a default planning figure, not a cap: the user confirmed that adding exercises simply makes the session longer, and that the 40-minute figure only described the original starter configuration. A new session runs the whole plan including finishers, so no check-in truncation choice exists. Sessions created before the change keep the 2400-second limit they were started under. Never compress rest or drop items either way. See [routine expansion](routine-expansion.md).
 - Active execution remains capped at 40 minutes. Existing explicit completion, pause, extension and cutoff records remain authoritative.
 
 ## Data and migration
