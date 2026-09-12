@@ -283,15 +283,17 @@ export const routineNames: Record<Routine, string> = {
   pull: '당기기',
   legs: '하체',
 };
+export function routineCycle(split: Split): Routine[] {
+  return split === 'upperLower'
+    ? ['upper', 'lower']
+    : split === 'ppl'
+      ? ['push', 'pull', 'legs']
+      : split === 'fixed'
+        ? ['fullA']
+        : ['fullA', 'fullB'];
+}
 export function nextRoutine(history: RecordEntry[], split: Split = 'full'): Routine {
-  const cycle: Routine[] =
-    split === 'upperLower'
-      ? ['upper', 'lower']
-      : split === 'ppl'
-        ? ['push', 'pull', 'legs']
-        : split === 'fixed'
-          ? ['fullA']
-          : ['fullA', 'fullB'];
+  const cycle = routineCycle(split);
   const last = [...history]
     .reverse()
     .find((r) => r.completed && r.confirmedSets > 0 && cycle.includes(r.routine));
@@ -302,6 +304,16 @@ export function routineOrder(routine: Routine) {
 }
 export function defaultPlan(routine: Routine): PlanItem[] {
   return plans[routine].map((machine) => ({ machine, sets: 3, work: 60, rest: 90 }));
+}
+/** One resolver for today's plan and future previews; legacy saved plans retain their behavior. */
+export function resolvePlan(routine: Routine, preferences: Preferences): PlanItem[] {
+  const plan = (preferences.savedPlan ?? defaultPlan(routine)).map((x) => ({ ...x }));
+  if (!preferences.starters.length || ['lower', 'legs'].includes(routine)) return plan;
+  try {
+    return withStarters(plan, preferences.starters).items;
+  } catch {
+    return plan;
+  }
 }
 export function planSeconds(items: PlanItem[]) {
   return (

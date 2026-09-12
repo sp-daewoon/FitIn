@@ -28,6 +28,12 @@ Implemented scheduler: follow the next routine in the selected cycle after a rou
 
 ## Phone and companion experience
 
+The “내 루틴” page connects actual previous records, today's current plan and the next two conditional visits. It offers four selectable program styles with every session's exercises, sets, rests, rationale and duration before application. Future visits are not assigned dates: no fabricated yesterday activity or mandatory tomorrow workout. They assume completion with explicit performance, matching the existing cycle. Applying a program clears prior starters/saved overrides after explaining that consequence; history remains. Saving a hand-edited plan now explicitly chooses fixed repetition. Legacy saved plans retain their old behavior and are labeled in previews. The shared `resolvePlan` supplies both today and future plans.
+
+Exercise guides expose external video references when available and a clearly labeled Korean YouTube search for every movement. Opening links pauses an active session; returning requires manual resume. Reference publication is checked, but playback and technique review are not. See [content sources](CONTENT_SOURCES.md).
+
+Apple Health is an authorized future iOS feature: optional workout export first, Watch heart rate later. Settings shows “준비 중 · 현재 미연결”; no health data is accessed. Follow the [HealthKit contract](architecture/HEALTH.md) before native implementation.
+
 Exercise catalog: 18 entries (7 machines, 5 barbells, 6 dumbbells). The barbell set includes squat, bench press, deadlift, row and overhead press. Dumbbells include shoulder press, reverse-grip row, bench press, one-arm row, lateral raise and curl. All are available through existing starter/replacement controls; adding a catalog entry must not automatically change beginner recommendations or saved plans.
 
 The exercise dictionary supports equipment filters, name/muscle search and opening the large image/setup guide. Each exercise has equipment, body region, primary/secondary muscles, movement pattern and an explicit atlas cell. Keep original IDs stable for local records. Additional atlases use nine cells each; test catalog/manifest correspondence to prevent showing the wrong movement. One-arm row uses both sides within a set; the user may extend the time window. Static draft images do not demonstrate the full motion.

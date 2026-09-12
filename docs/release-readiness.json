@@ -12,6 +12,7 @@
   "futurePlatforms": {
     "watch":"not implemented; simulator exercises common commands only",
     "android":"shared source only; not a tested native release",
-    "headphoneControls":"not implemented; Now Playing ownership must be resolved"
+    "headphoneControls":"not implemented; Now Playing ownership must be resolved",
+    "healthKit":"planned only; no native authorization, reads, exports or device evidence"
   }
 }

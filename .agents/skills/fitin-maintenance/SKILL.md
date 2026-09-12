@@ -14,6 +14,7 @@ Repository root is three directories above this file's folder. Read [AGENTS.md](
 - **Exercise selection/UI:** read [product contract](../../../docs/PRODUCT.md). Keep the machine default, optional generic starter selection, target-muscle imagery and small timer. Show time/selection consequences. Generation does not make imagery anatomically verified.
 - **Catalog expansion (FIT-013):** preserve existing exercise IDs and atlas slots. Update the catalog metadata, image manifest and static atlas sources together. Run `tests/catalog.test.ts` through the normal check gate: new selections must round-trip in local data, fit the time cap and map to the correct image. Do not change default routines just because the catalog grows.
 - **Audio/native/Watch:** read [platform boundaries](../../../docs/architecture/PLATFORMS.md). Simulator, mocked input and web evidence cannot certify AirPods, background audio or watch connectivity.
+- **Programs/videos/Health:** use `routineCycle` and `resolvePlan` for previews as well as today's plan. Future visits are conditional, not dated prescriptions. Follow [content sources](../../../docs/CONTENT_SOURCES.md) for external references and [HealthKit plan](../../../docs/architecture/HEALTH.md) for native health work. Never convert source-page checks to playback verification or planned HealthKit support to connected status.
 - **Review only:** follow [reviewer role](../../roles/reviewer.md). Report actionable regressions and missing evidence; do not silently implement fixes.
 
 ## Make the change reviewable

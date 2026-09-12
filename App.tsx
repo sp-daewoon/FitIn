@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Modal,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +16,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useWorkout } from './src/useWorkout';
 import { ExerciseVisual } from './src/ExerciseVisual';
 import { ExerciseLibrary } from './src/ExerciseLibrary';
+import { RoutinePlanner } from './src/RoutinePlanner';
+import { exerciseVideos, videoSearch } from './src/videos';
 import { Harness } from './src/Harness';
 import {
   defaultPlan,
@@ -26,6 +29,7 @@ import {
   PlanItem,
   planSeconds,
   routineNames,
+  resolvePlan,
   Split,
   TOTAL_SECONDS,
   validatePlan,
@@ -61,7 +65,9 @@ function Button({
 function FitIn() {
   const w = useWorkout();
   const { data, p } = w;
-  const [tab, setTab] = useState<'today' | 'library' | 'history' | 'settings' | 'harness'>('today'),
+  const [tab, setTab] = useState<'today' | 'plan' | 'library' | 'history' | 'settings' | 'harness'>(
+      'today',
+    ),
     [items, setItems] = useState<PlanItem[]>(defaultPlan('fullA')),
     [edit, setEdit] = useState(false),
     [personal, setPersonal] = useState(false),
@@ -75,14 +81,7 @@ function FitIn() {
   const routine = nextRoutine(data.history, data.preferences.split);
   const [selected, setSelected] = useState<MachineId>('legPress');
   useEffect(() => {
-    let next = data.preferences.savedPlan ?? defaultPlan(routine);
-    if (data.preferences.starters.length && !['lower', 'legs'].includes(routine)) {
-      try {
-        next = withStarters(next, data.preferences.starters).items;
-      } catch {
-        /* Keep the valid saved plan if a preference is incompatible. */
-      }
-    }
+    const next = resolvePlan(routine, data.preferences);
     setItems(next);
     setSelected(next[0].machine);
   }, [routine, data.preferences.savedPlan, data.preferences.starters]);
@@ -124,9 +123,30 @@ function FitIn() {
   }
   function savePlan() {
     if (planError) return;
-    w.setData((d) => ({ ...d, preferences: { ...d.preferences, savedPlan: items } }));
+    w.setData((d) => ({
+      ...d,
+      preferences: { ...d.preferences, split: 'fixed', starters: [], savedPlan: items },
+    }));
     setEdit(false);
-    setNotice('내 기본 루틴으로 저장했어요.');
+    setNotice('매번 반복하는 내 고정 루틴으로 저장했어요.');
+  }
+  function chooseRoutine(split: Split) {
+    if (session) return;
+    w.setData((d) => ({
+      ...d,
+      preferences: { ...d.preferences, split, starters: [], savedPlan: null },
+    }));
+    setTab('today');
+    setNotice('선택한 루틴을 적용했어요. 오늘 순서를 확인하고 체크인하세요.');
+  }
+  function openExternal(url: string) {
+    if (session && !session.paused) w.command('pause');
+    void Linking.openURL(url).catch(() => {
+      setGuide(null);
+      setNotice(
+        '링크를 열지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요. 진행 중이던 운동은 재개 버튼을 눌러 이어가세요.',
+      );
+    });
   }
   function applyPersonal() {
     try {
@@ -190,6 +210,7 @@ function FitIn() {
           {(
             [
               ['today', '오늘의 운동'],
+              ['plan', '내 루틴'],
               ['library', '운동 사전'],
               ['history', '운동 기록'],
               ['settings', '나의 방식'],
@@ -388,12 +409,21 @@ function FitIn() {
                         <View style={s.controlCard}>
                           <View style={s.between}>
                             <Text style={s.overline}>TODAY’S ROUTINE</Text>
-                            <Text style={s.liveBadge}>머신 중심</Text>
+                            <Text style={s.liveBadge}>
+                              {items.every((x) => machines[x.machine].equipment === '머신')
+                                ? '머신 중심'
+                                : '맞춤 구성'}
+                            </Text>
                           </View>
                           <Text style={s.controlTitle}>{routineNames[routine]}</Text>
                           <Text style={s.body}>
                             무엇을 할지 고민하지 않도록.{'\n'}기구·세트·휴식·이동을 함께 안내해요.
                           </Text>
+                          <Button
+                            secondary
+                            label="루틴 고르기 · 지난 운동과 다음 일정 보기 →"
+                            onPress={() => setTab('plan')}
+                          />
                           <View style={s.summaryRow}>
                             <View>
                               <Text style={s.summaryNumber}>
@@ -435,13 +465,13 @@ function FitIn() {
                         </View>
                         <View style={s.card}>
                           <View style={s.between}>
-                            <Text style={s.section}>오늘의 순서</Text>
+                            <Text style={s.section}>오늘 한 번 방문해서 할 운동</Text>
                             <Pressable
                               accessibilityRole="button"
                               onPress={() => setEdit(true)}
                               style={s.linkButton}
                             >
-                              <Text style={s.link}>수정 ↗</Text>
+                              <Text style={s.link}>교체·순서 수정 ↗</Text>
                             </Pressable>
                           </View>
                           {items.map((x, i) => (
@@ -476,6 +506,24 @@ function FitIn() {
                   </View>
                 </View>
               </>
+            )}
+            {tab === 'plan' && (
+              <RoutinePlanner
+                preferences={data.preferences}
+                history={data.history}
+                routine={session?.routine ?? routine}
+                today={items}
+                session={session}
+                onChoose={chooseRoutine}
+                onGuide={setGuide}
+                onToday={() => setTab('today')}
+                onHistory={() => setTab('history')}
+                onSource={() =>
+                  openExternal(
+                    'https://acsm.org/effective-resistance-training-program-infographic/',
+                  )
+                }
+              />
             )}
             {tab === 'history' && (
               <>
@@ -570,6 +618,14 @@ function FitIn() {
                   <Text style={s.helper}>
                     분할을 바꾸면 해당 방식의 기본 종목으로 재구성해요. 현재는 수행 기록이 있는 종료
                     루틴의 다음 순서를 제안합니다. 회복·피로 기반 개인화는 아직 개발 중이에요.
+                  </Text>
+                  <View style={s.line} />
+                  <Text style={s.section}>Apple 건강</Text>
+                  <Text style={s.liveBadge}>iPhone 연동 준비 중 · 현재 미연결</Text>
+                  <Text style={s.helper}>
+                    동의한 경우 완료한 근력 운동을 건강 앱에 저장하고, Apple Watch의 심박수를 함께
+                    확인하는 기능을 준비합니다. 현재 웹에서는 건강 데이터를 읽거나 저장하지 않아요.
+                    연동 없이도 FitIn을 사용할 수 있습니다.
                   </Text>
                   <View style={s.line} />
                   <View style={s.between}>
@@ -672,6 +728,29 @@ function FitIn() {
                   <Text style={s.section}>주요 자극 · {machines[guide].area}</Text>
                   <Text style={s.cue}>{machines[guide].setup}</Text>
                   <Text style={s.body}>{machines[guide].cue}</Text>
+                  <Text style={s.section}>영상으로 동작 확인</Text>
+                  {exerciseVideos[guide] && (
+                    <>
+                      <Button
+                        secondary
+                        label={`▶ ${exerciseVideos[guide]!.title} 보기`}
+                        onPress={() => openExternal(exerciseVideos[guide]!.url)}
+                      />
+                      <Text style={s.helper}>
+                        {exerciseVideos[guide]!.source} · 외부 참고 영상 · 기구 모델이 다를 수
+                        있어요
+                      </Text>
+                    </>
+                  )}
+                  <Button
+                    secondary
+                    label="YouTube에서 한국어 자세·쇼츠 검색 ↗"
+                    onPress={() => openExternal(videoSearch(guide))}
+                  />
+                  <Text style={s.helper}>
+                    인터넷 연결이 필요해요. 영상으로 나가면 진행 중인 운동은 일시정지하며 돌아와서
+                    직접 재개합니다. 검색 결과는 FitIn이 검수한 영상 목록이 아닙니다.
+                  </Text>
                   <Text style={s.helper}>
                     개발용 생성 이미지입니다. 정확한 자세와 기구 설정은 직원에게 확인하세요. 통증이
                     있으면 멈춰주세요.
@@ -812,7 +891,7 @@ function FitIn() {
                   <Button
                     disabled={!!planError}
                     secondary
-                    label="내 기본 루틴으로 저장"
+                    label="매번 반복하는 고정 루틴으로 저장"
                     onPress={savePlan}
                   />
                 </>

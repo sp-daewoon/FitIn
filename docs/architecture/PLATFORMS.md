@@ -8,6 +8,7 @@
 | Android | Shared JS core, notification channel and speech/audio calls | Physical audio focus, interruption and background tests |
 | Apple Watch | Shared command schema and input simulator | Actual SwiftUI target, WatchConnectivity adapter, single authority, reachability/duplicate/reconnect tests |
 | AirPods controls | Shared command source schema only | Native eligible Now Playing session, device events and music ownership conflict validation |
+| Apple Health | Planned data/permission contract and truthful disconnected settings | Native HealthKit capability, optional authorization, confirmed workout export, retry/deduplication and device evidence; see [HealthKit plan](HEALTH.md) |
 
 ## Authoritative constraints
 
