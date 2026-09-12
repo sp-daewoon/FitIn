@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "requirements": [
+    {"id":"FIT-001","rule":"Local durable data, no login/backend dependency","status":"implemented","code":["src/storage.ts","src/codec.ts"],"tests":["tests/codec.test.ts"],"docs":["docs/PRODUCT.md"]},
+    {"id":"FIT-002","rule":"Check-in after warmup, exactly ten seconds before first working set","status":"implemented","code":["src/workout.ts"],"tests":["tests/workout.test.ts"],"docs":["docs/PRODUCT.md"]},
+    {"id":"FIT-003","rule":"Manual next, rest skip, extra time, pause/resume coexist with automatic flow","status":"implemented","code":["src/workout.ts","src/useWorkout.ts","App.tsx"],"tests":["tests/workout.test.ts"],"docs":["docs/architecture/SESSION.md"]},
+    {"id":"FIT-004","rule":"Active time capped at forty minutes, no forced filler after early finish","status":"implemented","code":["src/workout.ts"],"tests":["tests/workout.test.ts"],"docs":["docs/PRODUCT.md"]},
+    {"id":"FIT-005","rule":"Explicit completion is distinct from automatic time, stop and budget cutoff","status":"implemented","code":["src/workout.ts"],"tests":["tests/workout.test.ts"],"docs":["docs/architecture/SESSION.md"]},
+    {"id":"FIT-006","rule":"Shared session/phase/revision-guarded input contract across app and companion clients","status":"partial","code":["src/workout.ts","src/Harness.tsx"],"tests":["tests/workout.test.ts"],"docs":["docs/architecture/PLATFORMS.md"]},
+    {"id":"FIT-007","rule":"Generic optional starter personalization preserves machine-led default and time budget","status":"implemented","code":["src/workout.ts","App.tsx"],"tests":["tests/workout.test.ts"],"docs":["docs/PRODUCT.md"]},
+    {"id":"FIT-008","rule":"Validate saved snapshots and preserve unreadable/legacy originals","status":"implemented","code":["src/codec.ts","src/storage.ts"],"tests":["tests/codec.test.ts"],"docs":["docs/architecture/SESSION.md"]},
+    {"id":"FIT-009","rule":"Phone imagery prioritizes recognizable machine and target muscles; release assets require review","status":"partial","code":["src/ExerciseVisual.tsx","App.tsx","assets/exercises/manifest.json"],"tests":[],"docs":["docs/PRODUCT.md","docs/release-readiness.json"]},
+    {"id":"FIT-010","rule":"Exercise/set speech and 5..1 beeps, music-friendly behavior validated on device","status":"partial","code":["src/audio.ts","src/notifications.ts","src/useWorkout.ts"],"tests":["tests/workout.test.ts"],"docs":["docs/architecture/PLATFORMS.md"]},
+    {"id":"FIT-011","rule":"Difficulty/split independent; final recommendation incorporates real load and recovery","status":"partial","code":["src/workout.ts","App.tsx"],"tests":["tests/workout.test.ts"],"docs":["docs/PRODUCT.md"]},
+    {"id":"FIT-012","rule":"Portable AI instructions, skill, role prompts, canonical docs and executable maintenance checks","status":"implemented","code":["AGENTS.md",".agents/skills/fitin-maintenance/SKILL.md","scripts/check-harness.mjs"],"tests":["tests/harness.test.ts"],"docs":["docs/AI_HARNESS.md","docs/HANDOFF.md"]}
+  ]
+}

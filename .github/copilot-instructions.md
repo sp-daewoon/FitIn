@@ -1,0 +1,1 @@
+For this repository, read [AGENTS.md](../AGENTS.md) and the [FitIn maintenance skill](../.agents/skills/fitin-maintenance/SKILL.md). Use the canonical docs and handoff linked there. Do not infer implemented capabilities from the historical HTML prototype.

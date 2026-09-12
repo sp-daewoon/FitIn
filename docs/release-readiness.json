@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "checks": [
+    {"id":"phone-visual-qa","status":"unverified","evidence":[],"note":"Image-led React UI built; no rendered phone/desktop review yet."},
+    {"id":"exercise-content-review","status":"draft","evidence":[],"note":"Generated atlas needs qualified anatomy, grip, equipment and cell-boundary review."},
+    {"id":"ios-build","status":"unverified","evidence":[],"note":"Full Xcode is unavailable in the current environment."},
+    {"id":"ios-audio-airpods","status":"unverified","evidence":[],"note":"No physical music/ducking/interruption verification."},
+    {"id":"ios-background","status":"unverified","evidence":[],"note":"Phase notifications implemented; locked-screen behavior unverified."},
+    {"id":"storage-device-recovery","status":"unverified","evidence":[],"note":"Codec unit tests pass; force-close/write-failure behavior needs device testing."},
+    {"id":"recommender-review","status":"draft","evidence":[],"note":"Simple cycle and substitution heuristic, not the final recovery-aware scheduler."}
+  ],
+  "futurePlatforms": {
+    "watch":"not implemented; simulator exercises common commands only",
+    "android":"shared source only; not a tested native release",
+    "headphoneControls":"not implemented; Now Playing ownership must be resolved"
+  }
+}

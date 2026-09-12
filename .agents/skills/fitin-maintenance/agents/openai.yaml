@@ -1,0 +1,4 @@
+interface:
+  display_name: "FitIn Maintenance"
+  short_description: "Maintain FitIn product contracts, tests, and AI handoffs"
+  default_prompt: "Use $fitin-maintenance to implement or review this FitIn change while preserving its product contracts and recording validation evidence."

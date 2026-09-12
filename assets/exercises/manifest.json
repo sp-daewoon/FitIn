@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "file": "assets/exercises/atlas-v2-draft.png",
+      "origin": "OpenAI image generation, original atlas, 2026-09-12",
+      "status": "draft",
+      "layout": "3 equal columns by 3 equal rows; runtime clipping",
+      "cells": ["chestPress","latPulldown","row","legPress","legCurl","legExtension","shoulderPress","reverseGrip","pecDeck"],
+      "reviewRequired": "Anatomical accuracy, seated leg-curl roller placement, reverse grip, equipment geometry, muscle emphasis and clipping. Not approved exercise instruction."
+    }
+  ]
+}
