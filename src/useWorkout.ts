@@ -11,8 +11,11 @@ import {
   finish,
   PlanItem,
   position,
+  reconcileOnLaunch,
+  resumeAfterGap,
   Routine,
   swapUpcoming,
+  touch,
   MachineId,
 } from './workout';
 import { loadData, save } from './storage';
@@ -24,6 +27,7 @@ export function useWorkout() {
     [error, setError] = useState(''),
     [saveFailed, setSaveFailed] = useState(false),
     [now, setNow] = useState(Date.now()),
+    [interrupted, setInterrupted] = useState(0),
     [busy, setBusy] = useState(false);
   const cue = useRef(''),
     beep = useRef(''),
@@ -32,7 +36,13 @@ export function useWorkout() {
   useEffect(() => {
     loadData()
       .then(({ data, legacy }) => {
-        setData(data);
+        // Cold start only: a backgrounded app never reaches this. If a session was left running
+        // while the process was dead, freeze the gap out and let the user say what happened.
+        const time = Date.now();
+        const check = data.session ? reconcileOnLaunch(data.session, time) : null;
+        if (check?.excluded) setInterrupted(Math.round(check.excluded));
+        setNow(time);
+        setData(check ? { ...data, session: check.session } : data);
         setReady(true);
         if (legacy)
           setError(
@@ -54,7 +64,12 @@ export function useWorkout() {
     const sub = AppState.addEventListener('change', (status) => {
       active.current = status === 'active';
       if (active.current) setNow(Date.now());
-      else void stopCues().catch(() => {});
+      else {
+        // Record the moment the app left the screen. If the system kills the process from here,
+        // the next launch knows how long nothing was driving the session.
+        setData((d) => (d.session ? { ...d, session: touch(d.session, Date.now()) } : d));
+        void stopCues().catch(() => {});
+      }
     });
     return () => {
       sub.remove();
@@ -68,7 +83,16 @@ export function useWorkout() {
     if (!data.session || data.session.paused) return;
     setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 100);
-    return () => clearInterval(timer);
+    // A slow heartbeat is persisted so an unexpected termination is dated from the last moment the
+    // app was known to be alive, not from the last button press.
+    const beat = setInterval(
+      () => setData((d) => (d.session ? { ...d, session: touch(d.session, Date.now()) } : d)),
+      30000,
+    );
+    return () => {
+      clearInterval(timer);
+      clearInterval(beat);
+    };
   }, [data.session?.id, data.session?.paused]);
   useEffect(() => {
     if (ready)
@@ -143,6 +167,14 @@ export function useWorkout() {
   function reorder(a: MachineId, b: MachineId) {
     setData((d) => (d.session ? { ...d, session: swapUpcoming(d.session, a, b, Date.now()) } : d));
   }
+  /** Answer to the launch gap question: credit the missing time as workout time, or discard it. */
+  function resolveGap(credit: boolean) {
+    const time = Date.now();
+    const seconds = credit ? interrupted : 0;
+    setInterrupted(0);
+    setNow(time);
+    setData((d) => (d.session ? { ...d, session: resumeAfterGap(d.session, time, seconds) } : d));
+  }
   function stop() {
     void stopCues().catch(() => {});
     setData((d) => finish(d, Date.now(), 'stopped'));
@@ -157,6 +189,8 @@ export function useWorkout() {
     now,
     p,
     busy,
+    interrupted,
+    resolveGap,
     start,
     command,
     reorder,

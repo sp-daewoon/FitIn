@@ -10,7 +10,11 @@ Phases have stable IDs (`index:machine:work:set`, `index:machine:rest:set`, move
 
 `next`: truncate the current duration to elapsed-in-phase; confirm only work phases. `extend`: append up to 30 seconds to current phase without crossing the active cap. `pause/resume`: snapshot elapsed and re-anchor. No filler is appended after early completion.
 
-Known limitation: device wall-clock changes can affect progress; backward deltas are clamped, but the implementation does not yet reconcile arbitrary clock changes across restart. Native monotonic/background reconciliation is a future explicit task, not something tests currently prove.
+`lastSeen` is a wall-clock heartbeat written when a client is known to be driving the session: at `begin`, on every accepted command through `anchor`, every 30 seconds in the foreground, and when the app leaves the screen. `lastSeenAt` takes the later of the heartbeat and the anchor, so a heartbeat can never rewind past a newer command.
+
+`reconcileOnLaunch` runs on cold start only. Backgrounding keeps the JS context and the in-memory session, so a screen-off period is credited normally and never reaches this path. A relaunch after the process died does reach it: if more than `ABANDON_SECONDS` passed since `lastSeen`, elapsed is frozen at `lastSeen`, the session is paused, the revision is bumped so stale commands cannot apply, and the excluded seconds are returned for the UI to ask about. `resumeAfterGap` applies the user's answer, crediting the gap or discarding it. Neither answer adds or removes a confirmed set. A future Watch client updates `lastSeen` the same way, which is what keeps a phone-terminated but watch-driven session from being treated as abandoned; do not replace this with a phone-only presence check.
+
+Known limitation: device wall-clock changes can affect progress; backward deltas are clamped, but the implementation does not reconcile arbitrary clock changes, and an unattended gap is detected only by elapsed wall time, not by proof of what the user was doing. Native monotonic/background reconciliation is a future explicit task, not something tests currently prove.
 
 ## Command contract
 

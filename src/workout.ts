@@ -328,6 +328,13 @@ export type Session = {
   confirmed: string[];
   revision: number;
   commands: string[];
+  /**
+   * Wall-clock ms when a client last reported driving this session. Backgrounding keeps the JS
+   * context and the in-memory session alive, so this only matters across a cold start. A future
+   * Watch client updates it the same way, which is what keeps a phone-terminated but watch-driven
+   * session from being treated as abandoned.
+   */
+  lastSeen?: number;
 };
 export type RecordEntry = {
   id: string;
@@ -589,10 +596,49 @@ export function begin(routine: Routine, items: PlanItem[], now: number, id = Str
     confirmed: [],
     revision: 0,
     commands: [],
+    lastSeen: now,
   };
 }
 export function sessionLimit(s: Session) {
   return s.timeLimit === null ? Infinity : (s.timeLimit ?? TOTAL_SECONDS);
+}
+/** Silence longer than this is not credited as workout time unless the user says it was real. */
+export const ABANDON_SECONDS = 180;
+/** The later of the explicit heartbeat and the last accepted command. */
+export function lastSeenAt(s: Session) {
+  return Math.max(s.lastSeen ?? 0, s.anchor);
+}
+export function touch(s: Session, now: number): Session {
+  return { ...s, lastSeen: Math.max(lastSeenAt(s), now) };
+}
+/**
+ * Cold-start reconciliation. Turning the screen off or backgrounding the app leaves the process
+ * alive, so the clock keeps running and this never runs. Relaunching after the process died does
+ * run it: no client was driving that gap, so it is frozen out rather than counted, and the caller
+ * must ask the user what actually happened. Neither answer records a set as performed.
+ */
+export function reconcileOnLaunch(
+  s: Session,
+  now: number,
+  gapSeconds = ABANDON_SECONDS,
+): { session: Session; excluded: number } {
+  const seen = lastSeenAt(s);
+  const gap = Math.max(0, now - seen) / 1000;
+  if (s.paused || gap <= gapSeconds) return { session: s, excluded: 0 };
+  const elapsed = Math.min(sessionLimit(s), s.elapsed + Math.max(0, seen - s.anchor) / 1000);
+  return {
+    session: { ...s, elapsed, anchor: now, lastSeen: now, paused: true, revision: s.revision + 1 },
+    excluded: gap,
+  };
+}
+/**
+ * The user's answer to the launch gap question. `creditSeconds` is the excluded gap when they
+ * confirm the session really was running, for example on a watch, and zero when it was not.
+ * Either way this re-anchors like an explicit resume and bumps the revision.
+ */
+export function resumeAfterGap(s: Session, now: number, creditSeconds: number): Session {
+  const elapsed = Math.min(sessionLimit(s), s.elapsed + Math.max(0, creditSeconds));
+  return { ...s, elapsed, paused: false, anchor: now, lastSeen: now, revision: s.revision + 1 };
 }
 export function elapsedAt(s: Session, now: number) {
   return Math.min(sessionLimit(s), s.elapsed + (s.paused ? 0 : Math.max(0, now - s.anchor) / 1000));
@@ -721,6 +767,18 @@ export function finish(data: Data, now: number, reason: RecordEntry['reason']): 
       },
     ],
   };
+}
+/**
+ * Deleting records is local and irreversible; the caller must confirm first. An active session is
+ * never touched, and the next routine is recomputed from whatever records remain, so removing the
+ * latest record can move the cycle back a step. Nothing is rewritten to make the order look tidy.
+ */
+export function removeRecords(data: Data, ids: string[]): Data {
+  const drop = new Set(ids);
+  return { ...data, history: data.history.filter((r) => !drop.has(r.id)) };
+}
+export function clearHistory(data: Data): Data {
+  return { ...data, history: [] };
 }
 export function phaseTitle(p: Phase | null) {
   return !p

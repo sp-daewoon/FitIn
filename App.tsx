@@ -35,6 +35,8 @@ import {
   PlanItem,
   planBreakdown,
   planSeconds,
+  removeRecords,
+  clearHistory,
   routineNames,
   resolvePlan,
   Routine,
@@ -83,6 +85,7 @@ function FitIn() {
     [append, setAppend] = useState<null | 'main' | 'finisher'>(null),
     [guide, setGuide] = useState<MachineId | null>(null),
     [stopConfirm, setStopConfirm] = useState(false),
+    [removing, setRemoving] = useState<null | { id: string; label: string } | 'all'>(null),
     [notice, setNotice] = useState('');
   const wide = useWindowDimensions().width >= 900;
   const session = data.session;
@@ -301,6 +304,32 @@ function FitIn() {
           <Text style={s.title}>기록을 불러오고 있어요.</Text>
         ) : (
           <>
+            {w.interrupted > 0 && session ? (
+              <View style={s.warning}>
+                <Text style={s.section}>
+                  앱이 종료된 사이 {formatTime(w.interrupted)}이 지났어요.
+                </Text>
+                <Text style={s.body}>
+                  그동안 앱이 시간을 재고 있지 않아서 운동 시간에 넣지 않았습니다. 운동은 일시정지
+                  상태이고 완료한 세트 기록은 그대로예요. 화면만 꺼두었을 때는 시간이 계속 흐르며,
+                  이 물음은 앱이 완전히 종료됐을 때만 나옵니다.
+                </Text>
+                <Button
+                  label="앱만 꺼졌고 운동은 계속했어요 · 시간 인정하고 이어서"
+                  onPress={() => w.resolveGap(true)}
+                />
+                <Button
+                  secondary
+                  label="쉬고 있었어요 · 그 시간은 빼고 이어서"
+                  onPress={() => w.resolveGap(false)}
+                />
+                <Button
+                  secondary
+                  label="여기까지 기록하고 끝내기"
+                  onPress={() => setStopConfirm(true)}
+                />
+              </View>
+            ) : null}
             {notice ? (
               <View style={s.notice}>
                 <Text style={[s.body, { flex: 1 }]}>{notice}</Text>
@@ -635,6 +664,19 @@ function FitIn() {
                         {r.performed.map((id) => machines[id].name).join(' · ') ||
                           '직접 완료 기록 없음'}
                       </Text>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`${routineNames[r.routine]} ${new Date(r.endedAt).toLocaleDateString('ko-KR')} 기록 삭제`}
+                        onPress={() =>
+                          setRemoving({
+                            id: r.id,
+                            label: `${new Date(r.endedAt).toLocaleString('ko-KR')} · ${routineNames[r.routine]}`,
+                          })
+                        }
+                        style={s.linkButton}
+                      >
+                        <Text style={s.link}>이 기록 삭제</Text>
+                      </Pressable>
                     </View>
                   ))
                 ) : (
@@ -643,6 +685,21 @@ function FitIn() {
                     <Text style={s.subtitle}>다음 방문에도 내 기기에서 이어갑니다.</Text>
                   </View>
                 )}
+                {data.history.length ? (
+                  <View style={s.card}>
+                    <Text style={s.section}>기록 정리</Text>
+                    <Text style={s.helper}>
+                      기록은 이 기기에만 있어서 지우면 되돌릴 수 없어요. 다음 운동 순서는 남은
+                      기록으로 다시 계산하므로 순서가 앞으로 돌아갈 수 있습니다. 저장한 내 루틴과
+                      진행 중인 운동은 지워지지 않아요.
+                    </Text>
+                    <Button
+                      secondary
+                      label={`기록 ${data.history.length}개 전체 삭제`}
+                      onPress={() => setRemoving('all')}
+                    />
+                  </View>
+                ) : null}
               </>
             )}
             {tab === 'settings' && (
@@ -717,7 +774,7 @@ function FitIn() {
         <Text style={s.footer}>LESS THINKING. MORE MOVING.</Text>
       </ScrollView>
       <Modal
-        visible={edit || personal || guide !== null || stopConfirm}
+        visible={edit || personal || guide !== null || stopConfirm || removing !== null}
         animationType="slide"
         transparent
         onRequestClose={() => {
@@ -727,19 +784,24 @@ function FitIn() {
           setStopConfirm(false);
           setReplace(null);
           setAppend(null);
+          setRemoving(null);
         }}
       >
         <View style={s.backdrop}>
           <SafeAreaView style={s.modal}>
             <View style={s.modalHeader}>
               <Text style={s.section}>
-                {stopConfirm
-                  ? '오늘은 여기까지 할까요?'
-                  : guide
-                    ? machines[guide].name
-                    : personal
-                      ? '나만의 시작 운동'
-                      : '오늘의 운동 수정'}
+                {removing
+                  ? removing === 'all'
+                    ? '기록을 전부 지울까요?'
+                    : '이 기록을 지울까요?'
+                  : stopConfirm
+                    ? '오늘은 여기까지 할까요?'
+                    : guide
+                      ? machines[guide].name
+                      : personal
+                        ? '나만의 시작 운동'
+                        : '오늘의 운동 수정'}
               </Text>
               <Pressable
                 accessibilityRole="button"
@@ -751,6 +813,7 @@ function FitIn() {
                   setStopConfirm(false);
                   setReplace(null);
                   setAppend(null);
+                  setRemoving(null);
                 }}
                 style={s.close}
               >
@@ -758,7 +821,33 @@ function FitIn() {
               </Pressable>
             </View>
             <ScrollView contentContainerStyle={s.modalContent}>
-              {stopConfirm ? (
+              {removing ? (
+                <>
+                  <Text style={s.body}>
+                    {removing === 'all'
+                      ? `운동 기록 ${data.history.length}개를 이 기기에서 지웁니다.`
+                      : `${removing.label} 기록을 이 기기에서 지웁니다.`}
+                  </Text>
+                  <Text style={s.helper}>
+                    되돌릴 수 없어요. 다음 운동 순서는 남은 기록으로 다시 계산합니다. 저장한 내
+                    루틴과 진행 중인 운동은 그대로 남습니다.
+                  </Text>
+                  <Button
+                    label={removing === 'all' ? '전부 삭제' : '삭제'}
+                    onPress={() => {
+                      const target = removing;
+                      w.setData((d) =>
+                        target === 'all' ? clearHistory(d) : removeRecords(d, [target.id]),
+                      );
+                      setRemoving(null);
+                      setNotice(
+                        target === 'all' ? '운동 기록을 모두 지웠어요.' : '선택한 기록을 지웠어요.',
+                      );
+                    }}
+                  />
+                  <Button secondary label="취소" onPress={() => setRemoving(null)} />
+                </>
+              ) : stopConfirm ? (
                 <>
                   <Text style={s.body}>현재까지의 시간과 직접 완료한 세트를 저장합니다.</Text>
                   <Button

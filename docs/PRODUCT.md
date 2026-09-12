@@ -34,6 +34,10 @@ Apple Health remains optional planned integration; no health data is accessed. F
 
 ## Records and AI maintenance
 
+Backgrounding the app or turning off the screen keeps the session clock running: the process is alive and the user is still in the gym with the phone in a pocket. A cold start after the process died is different, because nothing was measuring that gap. The session pauses, the gap is excluded from workout time, and the user is asked whether the session really was running, for example on a watch. The app does not guess: it states what it knows, defaults to the conservative answer, and neither answer adds or removes a confirmed set. Once a Watch client exists it keeps its own heartbeat, so a watch-driven session is not treated as abandoned.
+
+Workout records belong to the user and can be deleted one at a time or all at once. Deletion is confirmed first, says it cannot be undone, and never touches a running session or saved routines. The next routine is recomputed from the records that remain, so removing the latest visit can move the cycle back a step; the app does not rewrite history to keep the order looking continuous.
+
 Explicit set completion, automatic time passage, user stop and legacy budget cutoff are distinct. `fitin.v4` migrates v2/v3 in memory while preserving original keys, paused sessions, phase IDs and custom rest/templates. v1 remains separately preserved. See [session architecture](architecture/SESSION.md).
 
 The primary harness is AI maintenance: AGENTS.md, skills, role instructions, canonical docs, regression tests and release gates. The in-app interaction lab is only a supporting surface. See [current handoff](HANDOFF.md) for measured validation and remaining work. Never equate successful builds with physiological review or real-device acceptance.

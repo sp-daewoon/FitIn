@@ -96,6 +96,7 @@ export function decode(raw: string): Data {
       !routines.includes(s.routine) ||
       !finite(s.startedAt) ||
       !finite(s.anchor) ||
+      (s.lastSeen !== undefined && !finite(s.lastSeen)) ||
       !finite(s.elapsed) ||
       (d.version < 4 && s.elapsed > TOTAL_SECONDS) ||
       (d.version === 4 &&
