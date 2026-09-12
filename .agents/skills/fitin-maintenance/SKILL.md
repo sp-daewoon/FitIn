@@ -12,6 +12,7 @@ Repository root is three directories above this file's folder. Read [AGENTS.md](
 - **Time/progression/remote commands:** read [session architecture](../../../docs/architecture/SESSION.md). Change `src/workout.ts`, then exercise explicit next, late delivery, duplicate commands, pause/relaunch and the 40-minute boundary. UI/Watch must call this engine.
 - **Persistence:** read that architecture's storage section. Preserve unreadable originals, use a versioned key and explicit migration. Test decode and state roundtrip; never clear storage on parse failure.
 - **Exercise selection/UI:** read [product contract](../../../docs/PRODUCT.md). Keep the machine default, optional generic starter selection, target-muscle imagery and small timer. Show time/selection consequences. Generation does not make imagery anatomically verified.
+- **Catalog expansion (FIT-013):** preserve existing exercise IDs and atlas slots. Update the catalog metadata, image manifest and static atlas sources together. Run `tests/catalog.test.ts` through the normal check gate: new selections must round-trip in local data, fit the time cap and map to the correct image. Do not change default routines just because the catalog grows.
 - **Audio/native/Watch:** read [platform boundaries](../../../docs/architecture/PLATFORMS.md). Simulator, mocked input and web evidence cannot certify AirPods, background audio or watch connectivity.
 - **Review only:** follow [reviewer role](../../roles/reviewer.md). Report actionable regressions and missing evidence; do not silently implement fixes.
 

@@ -28,6 +28,10 @@ Implemented scheduler: follow the next routine in the selected cycle after a rou
 
 ## Phone and companion experience
 
+Exercise catalog: 18 entries (7 machines, 5 barbells, 6 dumbbells). The barbell set includes squat, bench press, deadlift, row and overhead press. Dumbbells include shoulder press, reverse-grip row, bench press, one-arm row, lateral raise and curl. All are available through existing starter/replacement controls; adding a catalog entry must not automatically change beginner recommendations or saved plans.
+
+The exercise dictionary supports equipment filters, name/muscle search and opening the large image/setup guide. Each exercise has equipment, body region, primary/secondary muscles, movement pattern and an explicit atlas cell. Keep original IDs stable for local records. Additional atlases use nine cells each; test catalog/manifest correspondence to prevent showing the wrong movement. One-arm row uses both sides within a set; the user may extend the time window. Static draft images do not demonstrate the full motion.
+
 Phone hierarchy: large recognizable machine + body position + highlighted primary muscles; exercise name and current set; one clear coaching cue; next/extend/pause; smaller time display. Artwork supports understanding; generated imagery must remain a clearly marked draft until anatomy/equipment review. Use original or properly licensed content; user reference images are visual references, not automatically licensed assets to ship.
 
 Watch hierarchy: current exercise/set, compact time, next, extend, pause. All device commands carry session identity, expected phase and revision; the phone engine is the intended authority. Actual Watch connectivity is not implemented yet.

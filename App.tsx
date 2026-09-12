@@ -14,6 +14,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useWorkout } from './src/useWorkout';
 import { ExerciseVisual } from './src/ExerciseVisual';
+import { ExerciseLibrary } from './src/ExerciseLibrary';
 import { Harness } from './src/Harness';
 import {
   defaultPlan,
@@ -60,7 +61,7 @@ function Button({
 function FitIn() {
   const w = useWorkout();
   const { data, p } = w;
-  const [tab, setTab] = useState<'today' | 'history' | 'settings' | 'harness'>('today'),
+  const [tab, setTab] = useState<'today' | 'library' | 'history' | 'settings' | 'harness'>('today'),
     [items, setItems] = useState<PlanItem[]>(defaultPlan('fullA')),
     [edit, setEdit] = useState(false),
     [personal, setPersonal] = useState(false),
@@ -150,7 +151,9 @@ function FitIn() {
     <View style={s.visualCard}>
       <View style={s.between}>
         <Text style={s.overline}>{session ? 'YOUR CURRENT MOVE' : 'KNOW YOUR NEXT MOVE'}</Text>
-        <Text style={s.tag}>{machine.startsWith('leg') ? 'LOWER BODY' : 'UPPER BODY'}</Text>
+        <Text style={s.tag}>
+          {m.equipment} · {m.region}
+        </Text>
       </View>
       <ExerciseVisual machine={machine} />
       <View style={s.muscleLegend}>
@@ -187,6 +190,7 @@ function FitIn() {
           {(
             [
               ['today', '오늘의 운동'],
+              ['library', '운동 사전'],
               ['history', '운동 기록'],
               ['settings', '나의 방식'],
               ...(__DEV__ ? [['harness', '하네스']] : []),
@@ -604,6 +608,7 @@ function FitIn() {
                 </View>
               </>
             )}
+            {tab === 'library' && <ExerciseLibrary onSelect={setGuide} />}
             {tab === 'harness' && __DEV__ && <Harness />}
           </>
         )}
@@ -854,7 +859,13 @@ const s = StyleSheet.create({
     borderRadius: 6,
     marginLeft: 6,
   },
-  nav: { flexDirection: 'row', gap: 22, borderBottomWidth: 1, borderColor: '#DEE6E3' },
+  nav: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    borderBottomWidth: 1,
+    borderColor: '#DEE6E3',
+  },
   tab: { paddingVertical: 15 },
   activeTab: { borderBottomWidth: 2, borderColor: '#244348' },
   tabText: { color: '#8A9999', fontWeight: '600', fontSize: 13 },

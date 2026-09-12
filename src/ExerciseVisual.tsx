@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { Image, View } from 'react-native';
 import { MachineId, machines } from './workout';
-/** One local atlas, clipped by the UI. No remote assets and no image manipulation pipeline. */
+const atlases = [
+  require('../assets/exercises/atlas-v2-draft.png'),
+  require('../assets/exercises/freeweights-atlas-draft.png'),
+];
+/** Local atlases, clipped by the UI. Existing exercise IDs keep their original image cells. */
 export function ExerciseVisual({ machine, size }: { machine: MachineId; size?: number }) {
   const [width, setWidth] = useState(size ?? 320);
-  const index = machines[machine].atlas;
+  const slot = machines[machine].atlas;
+  const index = slot % 9;
   return (
     <View
       accessible
@@ -21,7 +26,7 @@ export function ExerciseVisual({ machine, size }: { machine: MachineId; size?: n
       }}
     >
       <Image
-        source={require('../assets/exercises/atlas-v2-draft.png')}
+        source={atlases[Math.floor(slot / 9)]}
         resizeMode="stretch"
         style={{
           position: 'absolute',

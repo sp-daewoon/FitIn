@@ -11,19 +11,21 @@ The requested harness is **AI development/maintenance infrastructure**: durable 
 - Common engine: 10-second setup, no warmup, automatic progression, explicit next/skip/extend/pause, forty-minute cap, no forced filler, explicit performance records.
 - Guarded app/watch/headphone command envelope; isolated virtual input lab. **No actual watch/headphone control connection.**
 - Image-led React UI, draft anatomical atlas, machine and target muscles prioritized over timer. Generic optional starter selection, plan editing/saving/reset, split preference and basic cycle progression.
+- Catalog expanded to 18 exercises: 7 machines, 5 barbells, 6 dumbbells. New exercise dictionary offers equipment filters, name/muscle search and a large detail guide. All additions work with existing replacement/starter controls. Existing IDs, default routines and storage schema are unchanged. A second original draft atlas supplies the nine new images; see [generation prompt](../assets/exercises/freeweights-prompt.md).
 - Version-2 local data and validation; v1 remains untouched and is not silently migrated.
 - Foreground speech/beep adapters and rescheduled background notifications; physical behavior unverified.
 - Primary AI harness: AGENTS.md, canonical product/architecture, requirement map, project skill, portable implementer/reviewer/handoff role instructions, thin Claude/Copilot entrypoints, CI checks and readiness gate.
 
 ## Validation evidence
 
-- `npm run check`: TypeScript, 30 engine/codec/AI-harness tests, and harness reference/requirement validation passed on 2026-09-12 with Node 22.
-- `npm run build:web`: Expo exported the actual React app (332 modules, local beep and atlas assets) successfully.
+- `npm run check`: TypeScript, 33 engine/codec/catalog/AI-harness tests, and harness reference/requirement validation passed on 2026-09-12 with Node 22. New cases cover new-exercise session/plan/history round trips, speech names, budget-preserving barbell substitutions and atlas mapping integrity.
+- `npm run build:web`: Expo exported the actual React app (335 modules, local beep and both atlas assets) successfully. Formatting and diff whitespace checks passed. Local development server at http://localhost:8081 returned HTTP 200.
 - Skill Creator `quick_validate.py`: project skill valid (run with PyYAML through uv).
 - `npm run release:check`: expected nonzero result for seven unverified/draft readiness checks and draft anatomy. This is an intentional release block, not a passing release result.
-- CI is configured; its remote execution result must be checked separately after push.
+- Initial publication CI passed (run 34681594247); the catalog update's remote CI must be checked separately after push.
 - No computer-use visual QA, no native Xcode build, no physical phone/AirPods/Watch tests. Do not infer those from a successful bundle.
 - Generated anatomy remains draft. In particular review grip, leg-curl roller geometry, cell boundaries and target muscles before release.
+- Self-review found no additional code regression in the catalog diff. The generated freeweight atlas was visually inspected as a source image; runtime phone layouts and anatomical accuracy are not verified. New static images need qualified bar-path, grip, shoulder and bench/safety review, then full-motion guidance.
 
 ## Next concrete work
 
