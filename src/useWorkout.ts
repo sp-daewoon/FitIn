@@ -51,18 +51,25 @@ export function useWorkout() {
       });
   }, [data, ready]);
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 100);
     const sub = AppState.addEventListener('change', (status) => {
       active.current = status === 'active';
       if (active.current) setNow(Date.now());
       else void stopCues().catch(() => {});
     });
     return () => {
-      clearInterval(timer);
       sub.remove();
       void stopCues().catch(() => {});
     };
   }, []);
+  // The display tick runs only while a session is actually advancing. Ticking unconditionally
+  // re-rendered the whole screen ten times a second on every tab, including the planner, builder
+  // and dictionary, which made taps feel delayed. Nothing outside an advancing session reads `now`.
+  useEffect(() => {
+    if (!data.session || data.session.paused) return;
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 100);
+    return () => clearInterval(timer);
+  }, [data.session?.id, data.session?.paused]);
   useEffect(() => {
     if (ready)
       void syncReminders(data.session, data.sound).catch(() =>
