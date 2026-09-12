@@ -19,7 +19,7 @@ test('round trip preserves a paused session and command deduplication', () => {
 });
 test('corrupt and future snapshots are rejected rather than cleared', () => {
   assert.throws(() => decode('{'));
-  assert.throws(() => decode(JSON.stringify({ ...emptyData, version: 3 })));
+  assert.throws(() => decode(JSON.stringify({ ...emptyData, version: 4 })));
   assert.throws(() =>
     decode(
       JSON.stringify({

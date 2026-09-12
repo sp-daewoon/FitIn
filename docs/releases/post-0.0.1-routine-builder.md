@@ -1,6 +1,6 @@
 # Post-0.0.1 implementation brief · persistent routine builder
 
-Status: planned. Do not backport into the immutable `v0.0.1` / `web/v0.0.1` tags. Implement after the current Astra token window is available for the design and migration review.
+Status: **implemented** on 2026-09-12 as development version 0.0.2; see [the 0.0.2 note](0.0.2.md) and [FIT-018](../requirements.json). Not backported into the immutable `v0.0.1` / `web/v0.0.1` tags, which are unchanged. The contract below stays canonical: change it before changing the behavior.
 
 ## User-visible contract
 
@@ -32,4 +32,4 @@ Prefer extending the existing `PlanItem` with `work` and an optional rest overri
 
 ## Release note
 
-This brief is not evidence of implementation. The `v0.0.1` release remains the earlier preview baseline. Update [versions.json](versions.json), add scoped tests and a new release note only when the builder is implemented and validated.
+The `v0.0.1` release remains the earlier preview baseline and is not modified. [versions.json](versions.json) now carries source/web development version 0.0.2 with no tag. Tests live in `tests/builder.test.ts`; validation evidence is recorded in [the 0.0.2 note](0.0.2.md) and [HANDOFF.md](../HANDOFF.md). Device, native and content gates remain unverified, so this is not a releasable build.

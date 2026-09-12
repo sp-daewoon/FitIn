@@ -1,6 +1,6 @@
 # Release management
 
-[Version ledger](releases/versions.json) is the source of truth for independently tracked source, web, iOS, Android and watchOS versions. [0.0.1 notes](releases/0.0.1.md) describe the first preview baseline.
+[Version ledger](releases/versions.json) is the source of truth for independently tracked source, web, iOS, Android and watchOS versions. [0.0.1 notes](releases/0.0.1.md) describe the first preview baseline, the only published tags. [0.0.2 notes](releases/0.0.2.md) describe the current source/web development version, which has no tag and is not releasable.
 
 Use `vX.Y.Z` for a source baseline, `web/vX.Y.Z`, `ios/vX.Y.Z`, `android/vX.Y.Z`, and `watchos/vX.Y.Z` only for the corresponding platform artifact. Never move a published tag. Version bumps for one platform do not imply others shipped. iOS build numbers and Android versionCode must increase per upload; record artifact/build/source commit/distribution evidence in release notes. For a paired Watch app, Apple-required version compatibility must be checked in native configuration even though delivery evidence is tracked separately.
 

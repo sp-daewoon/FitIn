@@ -21,19 +21,25 @@ import { exerciseVideos, videoSearch } from './src/videos';
 import { repetitionGuide } from './src/programGuidance';
 import { Harness } from './src/Harness';
 import {
+  capPlan,
   defaultPlan,
+  DEFAULT_WORK,
   formatTime,
   Level,
   MachineId,
   machines,
+  markRestOverrides,
+  MAX_ITEMS,
   nextRoutine,
   PlanItem,
+  planBreakdown,
   planSeconds,
   routineNames,
   resolvePlan,
+  Routine,
   Split,
   TOTAL_SECONDS,
-  validatePlan,
+  validateTemplate,
   withStarters,
 } from './src/workout';
 function Button({
@@ -74,6 +80,7 @@ function FitIn() {
     [personal, setPersonal] = useState(false),
     [draft, setDraft] = useState<MachineId[]>([]),
     [replace, setReplace] = useState<number | null>(null),
+    [append, setAppend] = useState<null | 'main' | 'finisher'>(null),
     [guide, setGuide] = useState<MachineId | null>(null),
     [stopConfirm, setStopConfirm] = useState(false),
     [notice, setNotice] = useState('');
@@ -85,16 +92,27 @@ function FitIn() {
     const next = resolvePlan(routine, data.preferences);
     setItems(next);
     setSelected(next[0].machine);
-  }, [routine, data.preferences.savedPlan, data.preferences.starters]);
+  }, [
+    routine,
+    data.preferences.savedPlan,
+    data.preferences.starters,
+    data.preferences.templates,
+    data.preferences.globalRest,
+  ]);
   const machine = p?.phase?.machine ?? selected;
   const m = machines[machine];
   let planError = '';
   try {
-    validatePlan(items);
+    // Shape only: a goal template is allowed to exceed the cap, so the 40-minute consequence is
+    // an explicit check-in choice below rather than a blocking error.
+    validateTemplate(items);
   } catch (e) {
     planError = (e as Error).message;
   }
   const total = planSeconds(items),
+    parts = planBreakdown(items),
+    capped = capPlan(items),
+    overCap = !planError && capped.dropped.length > 0,
     remaining = TOTAL_SECONDS - (p?.elapsed ?? 0);
   const upcoming =
     session && p
@@ -107,35 +125,64 @@ function FitIn() {
       return next;
     });
   }
-  function change(index: number, key: 'sets' | 'rest', delta: number) {
+  const bounds = { sets: [1, 5], rest: [30, 180], work: [20, 180] } as const;
+  function change(index: number, key: 'sets' | 'rest' | 'work', delta: number) {
+    const [low, high] = bounds[key];
     setItems((current) =>
       current.map((x, i) =>
-        i === index
-          ? {
-              ...x,
-              [key]: Math.max(
-                key === 'sets' ? 1 : 30,
-                Math.min(key === 'sets' ? 5 : 180, x[key] + delta),
-              ),
-            }
-          : x,
+        i === index ? { ...x, [key]: Math.max(low, Math.min(high, x[key] + delta)) } : x,
       ),
     );
   }
-  function savePlan() {
-    if (planError) return;
+  /** Today's copy only. The persistent template is written from the routine builder. */
+  function addToday(machine: MachineId, finisher: boolean) {
+    setItems((current) => [
+      ...current,
+      {
+        machine,
+        sets: 3,
+        work: DEFAULT_WORK,
+        rest: data.preferences.globalRest,
+        ...(finisher ? { finisher: true } : {}),
+      },
+    ]);
+    setAppend(null);
+  }
+  function saveTemplate(target: Routine, plan: PlanItem[], globalRest: number) {
     w.setData((d) => ({
       ...d,
-      preferences: { ...d.preferences, split: 'fixed', starters: [], savedPlan: items },
+      preferences: {
+        ...d.preferences,
+        globalRest,
+        templates: { ...d.preferences.templates, [target]: plan },
+      },
     }));
+    setNotice(`${routineNames[target]} 기본 루틴을 저장했어요. 다음 체크인부터 적용됩니다.`);
+  }
+  function resetTemplate(target: Routine) {
+    w.setData((d) => {
+      const templates = { ...d.preferences.templates };
+      delete templates[target];
+      return { ...d, preferences: { ...d.preferences, templates } };
+    });
+    setNotice(`${routineNames[target]} 기본 루틴을 기본 구성으로 되돌렸어요.`);
+  }
+  function savePlan() {
+    if (planError) return;
+    // A rest value the user typed here is explicit: keep it distinct from the global default so a
+    // later global-rest change in the builder cannot overwrite it without being asked.
+    saveTemplate(
+      routine,
+      markRestOverrides(items, data.preferences.globalRest),
+      data.preferences.globalRest,
+    );
     setEdit(false);
-    setNotice('매번 반복하는 내 고정 루틴으로 저장했어요.');
   }
   function chooseRoutine(split: Split) {
     if (session) return;
     w.setData((d) => ({
       ...d,
-      preferences: { ...d.preferences, split, starters: [], savedPlan: null },
+      preferences: { ...d.preferences, split, starters: [], savedPlan: null, templates: {} },
     }));
     setTab('today');
     setNotice('선택한 루틴을 적용했어요. 오늘 순서를 확인하고 체크인하세요.');
@@ -446,22 +493,66 @@ function FitIn() {
                           </View>
                           <View style={s.budget}>
                             <View style={s.between}>
-                              <Text style={s.small}>예상 진행 시간</Text>
+                              <Text style={s.small}>운동 시간</Text>
+                              <Text style={s.budgetValue}>{formatTime(parts.work)}</Text>
+                            </View>
+                            <View style={s.between}>
+                              <Text style={s.small}>휴식 시간</Text>
+                              <Text style={s.budgetValue}>{formatTime(parts.rest)}</Text>
+                            </View>
+                            <View style={s.between}>
+                              <Text style={s.small}>기구 이동·준비</Text>
+                              <Text style={s.budgetValue}>
+                                {formatTime(parts.move + parts.setup)}
+                              </Text>
+                            </View>
+                            <View style={s.between}>
+                              <Text style={s.small}>합계</Text>
                               <Text style={s.budgetValue}>{formatTime(total)}</Text>
                             </View>
                             <View style={s.between}>
-                              <Text style={s.small}>추가 휴식·정리 여유</Text>
+                              <Text style={s.small}>
+                                {total > TOTAL_SECONDS ? '40분 초과' : '40분까지 여유'}
+                              </Text>
                               <Text style={s.budgetValue}>
-                                {formatTime(Math.max(0, 2400 - total))}
+                                {formatTime(Math.abs(TOTAL_SECONDS - total))}
                               </Text>
                             </View>
                           </View>
                           {planError ? <Text style={s.limit}>{planError}</Text> : null}
-                          <Button
-                            disabled={w.busy || !!planError}
-                            label={w.busy ? '준비 중…' : '체크인하고 시작  →'}
-                            onPress={() => void w.start(routine, items)}
-                          />
+                          {overCap ? (
+                            <>
+                              <Text style={s.limit}>
+                                내 기본 루틴이 40분보다 깁니다. 어떻게 할지 골라주세요. 휴식을 몰래
+                                줄이거나 운동을 말없이 빼지 않아요.
+                              </Text>
+                              <Text style={s.helper}>
+                                40분까지만 하면 다음 운동은 하지 않은 것으로 남아요 ·{' '}
+                                {capped.dropped.map((x) => machines[x.machine].name).join(' · ')}
+                              </Text>
+                              <Button
+                                disabled={w.busy}
+                                label={w.busy ? '준비 중…' : '40분까지만 하고 시작  →'}
+                                onPress={() => {
+                                  setNotice(
+                                    `${capped.dropped.map((x) => machines[x.machine].name).join(' · ')}는 오늘 하지 않은 것으로 기록됩니다.`,
+                                  );
+                                  void w.start(routine, capped.items);
+                                }}
+                              />
+                              <Button
+                                secondary
+                                label="오늘만 줄여서 40분에 맞추기"
+                                onPress={() => setEdit(true)}
+                              />
+                            </>
+                          ) : (
+                            <Button
+                              disabled={w.busy || !!planError}
+                              label={w.busy ? '준비 중…' : '체크인하고 시작  →'}
+                              onPress={() => void w.start(routine, items)}
+                            />
+                          )}
                           <Text style={s.helper}>
                             몸풀기를 마친 상태에서 시작해요.{'\n'}“시작하겠습니다” 안내 후 10초
                             여유를 드려요.
@@ -482,15 +573,18 @@ function FitIn() {
                             <Pressable
                               accessibilityRole="button"
                               accessibilityLabel={`${machines[x.machine].name} 미리보기`}
-                              key={x.machine}
+                              key={`${i}:${x.machine}`}
                               onPress={() => setSelected(x.machine)}
                               style={[s.queueRow, selected === x.machine && s.selectedRow]}
                             >
                               <Text style={s.order}>{String(i + 1).padStart(2, '0')}</Text>
                               <View style={{ flex: 1 }}>
-                                <Text style={s.rowTitle}>{machines[x.machine].name}</Text>
+                                <Text style={s.rowTitle}>
+                                  {machines[x.machine].name}
+                                  {x.finisher ? ' · 마무리' : ''}
+                                </Text>
                                 <Text style={s.small}>
-                                  {x.sets}세트 · 휴식 {x.rest}초
+                                  {x.sets}세트 · 세트당 {x.work}초 · 휴식 {x.rest}초
                                 </Text>
                               </View>
                               <Text style={s.small}>↗</Text>
@@ -522,6 +616,8 @@ function FitIn() {
                 onGuide={setGuide}
                 onToday={() => setTab('today')}
                 onHistory={() => setTab('history')}
+                onSaveTemplate={saveTemplate}
+                onResetTemplate={resetTemplate}
                 onSource={() =>
                   openExternal(
                     'https://acsm.org/effective-resistance-training-program-infographic/',
@@ -684,6 +780,7 @@ function FitIn() {
           setGuide(null);
           setStopConfirm(false);
           setReplace(null);
+          setAppend(null);
         }}
       >
         <View style={s.backdrop}>
@@ -696,7 +793,7 @@ function FitIn() {
                     ? machines[guide].name
                     : personal
                       ? '나만의 시작 운동'
-                      : '내 루틴 수정'}
+                      : '오늘의 운동 수정'}
               </Text>
               <Pressable
                 accessibilityRole="button"
@@ -707,6 +804,7 @@ function FitIn() {
                   setGuide(null);
                   setStopConfirm(false);
                   setReplace(null);
+                  setAppend(null);
                 }}
                 style={s.close}
               >
@@ -798,11 +896,11 @@ function FitIn() {
               ) : (
                 <>
                   <Text style={s.body}>
-                    운동·순서·세트·휴식을 바꿔보세요. 휴식을 몰래 줄이지 않고 전체 시간을 바로
-                    계산해요.
+                    오늘 한 번만 바꾸는 화면이에요. 여기서 바꾼 건 내 기본 루틴을 건드리지 않습니다.
+                    휴식을 몰래 줄이지 않고 전체 시간을 바로 계산해요.
                   </Text>
                   {items.map((x, i) => (
-                    <View key={x.machine} style={s.editRow}>
+                    <View key={`${i}:${x.machine}`} style={s.editRow}>
                       <View style={s.between}>
                         <Pressable
                           accessibilityRole="button"
@@ -810,7 +908,8 @@ function FitIn() {
                           style={s.linkButton}
                         >
                           <Text style={s.rowTitle}>
-                            {i + 1}. {machines[x.machine].name} ⇄
+                            {i + 1}. {machines[x.machine].name}
+                            {x.finisher ? ' · 마무리' : ''} ⇄
                           </Text>
                         </Pressable>
                         <View style={s.actionRow}>
@@ -832,12 +931,21 @@ function FitIn() {
                           >
                             <Text>↓</Text>
                           </Pressable>
+                          <Pressable
+                            disabled={items.length <= 1}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${machines[x.machine].name} 오늘은 빼기`}
+                            style={s.miniButton}
+                            onPress={() => setItems((c) => c.filter((_, j) => j !== i))}
+                          >
+                            <Text>−</Text>
+                          </Pressable>
                         </View>
                       </View>
                       {replace === i && (
                         <View style={s.chips}>
                           {(Object.keys(machines) as MachineId[])
-                            .filter((id) => !items.some((x) => x.machine === id))
+                            .filter((id) => x.finisher || !items.some((y) => y.machine === id))
                             .map((id) => (
                               <Pressable
                                 accessibilityRole="button"
@@ -863,6 +971,21 @@ function FitIn() {
                         </View>
                       </View>
                       <View style={s.between}>
+                        <Text style={s.small}>세트당 운동 {x.work}초</Text>
+                        <View style={s.actionRow}>
+                          <Button
+                            secondary
+                            label="운동 −15"
+                            onPress={() => change(i, 'work', -15)}
+                          />
+                          <Button
+                            secondary
+                            label="운동 +15"
+                            onPress={() => change(i, 'work', 15)}
+                          />
+                        </View>
+                      </View>
+                      <View style={s.between}>
                         <Text style={s.small}>휴식 {x.rest}초</Text>
                         <View style={s.actionRow}>
                           <Button
@@ -879,7 +1002,58 @@ function FitIn() {
                       </View>
                     </View>
                   ))}
+                  <View style={s.actionRow}>
+                    <Button
+                      secondary
+                      disabled={items.length >= MAX_ITEMS}
+                      label="+ 오늘만 운동 추가"
+                      onPress={() => setAppend(append === 'main' ? null : 'main')}
+                    />
+                    <Button
+                      secondary
+                      disabled={items.length >= MAX_ITEMS}
+                      label="+ 마지막 마무리 운동"
+                      onPress={() => setAppend(append === 'finisher' ? null : 'finisher')}
+                    />
+                  </View>
+                  {append && (
+                    <>
+                      <Text style={s.helper}>
+                        {append === 'finisher'
+                          ? '맨 뒤에 붙습니다. 마무리로는 같은 운동을 한 번 더 넣을 수 있어요.'
+                          : '맨 뒤에 추가한 뒤 ↑로 원하는 자리에 올리세요.'}
+                      </Text>
+                      <View style={s.chips}>
+                        {(Object.keys(machines) as MachineId[])
+                          .filter(
+                            (id) => append === 'finisher' || !items.some((x) => x.machine === id),
+                          )
+                          .map((id) => (
+                            <Pressable
+                              accessibilityRole="button"
+                              style={s.chip}
+                              key={id}
+                              onPress={() => addToday(id, append === 'finisher')}
+                            >
+                              <Text>{machines[id].name}</Text>
+                            </Pressable>
+                          ))}
+                      </View>
+                    </>
+                  )}
+                  <Text style={s.section}>
+                    운동 {formatTime(parts.work)} · 휴식 {formatTime(parts.rest)} · 이동·준비{' '}
+                    {formatTime(parts.move + parts.setup)}
+                  </Text>
                   <Text style={s.section}>예상 {formatTime(total)} / 40:00</Text>
+                  {overCap && (
+                    <Text style={s.limit}>
+                      40분을 {formatTime(total - TOTAL_SECONDS)} 넘습니다. 그대로 두면 체크인할 때
+                      40분까지만 하고{' '}
+                      {capped.dropped.map((x) => machines[x.machine].name).join(' · ')}은 하지 않은
+                      것으로 남아요.
+                    </Text>
+                  )}
                   <Text style={s.helper}>
                     변경한 부위: {items.map((x) => machines[x.machine].area).join(' · ')}
                   </Text>
@@ -889,15 +1063,20 @@ function FitIn() {
                     label="오늘만 적용"
                     onPress={() => {
                       setEdit(false);
+                      setAppend(null);
                       setSelected(items[0].machine);
                     }}
                   />
                   <Button
                     disabled={!!planError}
                     secondary
-                    label="매번 반복하는 고정 루틴으로 저장"
+                    label="내 기본 루틴에도 저장"
                     onPress={savePlan}
                   />
+                  <Text style={s.helper}>
+                    기본 루틴에 저장하면 다음 방문부터 계속 이 구성으로 시작해요. 세트당 시간과 전체
+                    휴식은 내 루틴 탭에서 더 자세히 조절할 수 있습니다.
+                  </Text>
                 </>
               )}
             </ScrollView>

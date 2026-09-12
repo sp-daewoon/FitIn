@@ -6,6 +6,7 @@ import {
   MachineId,
   machines,
   PlanItem,
+  planSeconds,
   Preferences,
   RecordEntry,
   resolvePlan,
@@ -14,8 +15,8 @@ import {
   routineNames,
   Split,
   Session,
+  TOTAL_SECONDS,
 } from './workout';
-import { planSeconds } from './workout';
 import {
   alternatives,
   Attendance,
@@ -23,6 +24,7 @@ import {
   routinePurpose,
   scheduleExample,
 } from './programGuidance';
+import { RoutineBuilder } from './RoutineBuilder';
 
 const programs: { split: Split; name: string; forWho: string; why: string; rhythm: string }[] = [
   {
@@ -54,6 +56,8 @@ const programs: { split: Split; name: string; forWho: string; why: string; rhyth
     rhythm: '주 2~3회 예시 · 같은 부위의 연일 운동은 피하기',
   },
 ];
+const visitLabels = ['오늘', '다음 방문', '다다음 방문'];
+
 export function RoutinePlanner({
   preferences,
   history,
@@ -65,6 +69,8 @@ export function RoutinePlanner({
   onToday,
   onHistory,
   onSource,
+  onSaveTemplate,
+  onResetTemplate,
 }: {
   preferences: Preferences;
   history: RecordEntry[];
@@ -76,9 +82,12 @@ export function RoutinePlanner({
   onToday: () => void;
   onHistory: () => void;
   onSource: () => void;
+  onSaveTemplate: (routine: Routine, items: PlanItem[], globalRest: number) => void;
+  onResetTemplate: (routine: Routine) => void;
 }) {
   const [preview, setPreview] = useState<Split>(preferences.split);
   const [attendance, setAttendance] = useState<Attendance>('three');
+  const [details, setDetails] = useState(false);
   const active = !!session;
   const cycle = routineCycle(preferences.split);
   const start = Math.max(0, cycle.indexOf(routine));
@@ -87,140 +96,103 @@ export function RoutinePlanner({
   const showPlan = (items: PlanItem[]) =>
     items.map((item, index) => (
       <Pressable
-        key={item.machine}
+        key={`${index}:${item.machine}`}
         accessibilityRole="button"
         onPress={() => onGuide(item.machine)}
         style={s.row}
       >
         <Text style={s.number}>{String(index + 1).padStart(2, '0')}</Text>
         <View style={{ flex: 1 }}>
-          <Text style={s.name}>{machines[item.machine].name}</Text>
-          <Text style={s.meta}>
-            {machines[item.machine].area} · {item.sets}세트 · 휴식 {item.rest}초
+          <Text style={s.name}>
+            {machines[item.machine].name}
+            {item.finisher ? ' · 마무리' : ''}
           </Text>
           <Text style={s.meta}>
-            세트당 {repetitionGuide(item.machine)} · {machines[item.machine].pattern}
+            {machines[item.machine].area} · {item.sets}세트 · 세트당 {item.work}초 · 휴식{' '}
+            {item.rest}초
           </Text>
         </View>
         <Text>↗</Text>
       </Pressable>
     ));
+
   return (
     <View style={s.page}>
-      <Text style={s.title}>내 운동의 전체 흐름.</Text>
-      <Text style={s.body}>
-        1. 루틴 고르기 → 2. 오늘 순서 확인·수정 → 3. 체크인{'\n'}요일이 바뀌어도 순서를 건너뛰지
-        않아요. 다음 방문은 내일로 확정된 일정이 아닙니다.
-      </Text>
-      <Text style={s.title}>나에게 맞는 루틴 고르기</Text>
-      <View style={s.card}>
-        <Text style={s.heading}>처음이라 선택이 어렵다면</Text>
-        <Text style={s.body}>
-          주 2~3회 또는 불규칙 방문 → 전신 A/B{'\n'}주 4회, 부위별로 집중 → 상체/하체{'\n'}분할에
-          익숙하고 방문 횟수가 충분함 → PPL{'\n'}빈도만으로 회복 상태를 판단하지 않아요. 먼저 구성과
-          시간부터 확인하세요.
-        </Text>
-        <Pressable accessibilityRole="button" onPress={() => setPreview('full')} style={s.button}>
-          <Text style={s.name}>입문 추천 · 전신 A/B 구성 보기 →</Text>
-        </Pressable>
-      </View>
-      <View style={s.choices}>
-        {programs.map((program) => (
-          <Pressable
-            key={program.split}
-            accessibilityRole="button"
-            accessibilityState={{ selected: preview === program.split }}
-            onPress={() => setPreview(program.split)}
-            style={[s.choice, preview === program.split && s.selected]}
-          >
-            <Text style={s.heading}>
-              {program.name}
-              {preferences.split === program.split ? ' · 사용 중' : ''}
-            </Text>
-            <Text style={s.body}>{program.forWho}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <View style={s.card}>
-        <Text style={s.heading}>{chosen.name} · 전체 구성 미리보기</Text>
-        <Text style={s.body}>{chosen.why}</Text>
-        <Text style={s.body}>{chosen.rhythm}</Text>
-        <Text style={s.heading}>운동일과 휴식일 · 일정 예시</Text>
-        <Text style={s.meta}>
-          요일표는 이해를 돕는 예시이며 저장되는 예약이 아닙니다. 실제 진행은 방문 순서에 따라
-          이어져요.
-        </Text>
-        {preview === 'ppl' && (
-          <View style={s.choices}>
-            {(['three', 'six', 'rolling'] as Attendance[]).map((value, index) => (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: attendance === value }}
-                key={value}
-                onPress={() => setAttendance(value)}
-                style={[s.button, attendance === value && s.selected]}
-              >
-                <Text style={s.name}>{['주 3회', '주 6회', '3일 운동 + 1일 휴식'][index]}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-        <View style={s.choices}>
-          {scheduleExample(preview, attendance).map((day) => (
-            <View
-              key={day.day}
-              style={[s.day, day.label === '휴식' && { backgroundColor: '#F2F3EE' }]}
-            >
-              <Text style={s.meta}>{day.day}</Text>
-              <Text style={s.name}>{day.label}</Text>
-            </View>
-          ))}
-        </View>
-        <Text style={s.body}>
-          {preview === 'ppl'
-            ? attendance === 'three'
-              ? '주 3회 PPL은 각 부위를 주 1회 훈련하는 예시예요. 입문·불규칙 방문이라면 전신 A/B를 먼저 고려하세요. 쉬는 날 수만으로 완전 회복을 보장하지 않습니다.'
-              : attendance === 'six'
-                ? '각 부위를 주 2회 반복하는 빈도 높은 예시입니다. 숙련자도 피로·수면·통증에 따라 휴식일과 세트 수를 조절하세요. 주 6회가 자동으로 더 좋은 결과를 보장하지 않아요.'
-                : '요일에 고정하지 않고 4일 주기를 반복합니다. 달력의 매주 같은 요일에 같은 부위가 오지는 않아요.'
-            : '요일 배치는 예시이며 예약이 아닙니다. 방문하지 못한 날을 몰아서 보충하지 않고 다음 체크인에서 순서를 이어가요.'}
-        </Text>
-        <Text style={s.heading}>이대로 시작할 때</Text>
-        <Text style={s.body}>
-          각 운동 3세트, 세트당 아래 반복 범위로 시작해요. 마지막에 2~3회는 더 할 수 있을 정도의
-          가벼운 무게로 자세를 익히세요. 60초는 진행 예상 시간이며, 횟수를 채우고 먼저 끝나면 세트
-          완료를 눌러요. 필요하면 +30초 더 또는 일시정지를 사용하세요. 휴식은 90초, 기구 이동·정리는
-          60초가 포함됩니다.
-        </Text>
-        {routineCycle(preview).map((step) => (
-          <View key={step}>
-            <Text style={s.heading}>
-              {routineNames[step]} · {formatTime(planSeconds(defaultPlan(step)))}
-            </Text>
-            <Text style={s.body}>
-              {routinePurpose[step]} · {defaultPlan(step).reduce((sum, item) => sum + item.sets, 0)}
-              세트 · 40분까지 여유 {formatTime(2400 - planSeconds(defaultPlan(step)))}
-            </Text>
-            {showPlan(defaultPlan(step))}
-            {defaultPlan(step).some((item) => alternatives[item.machine]?.length) && (
-              <Text style={s.body}>
-                기구가 없거나 다른 동작을 원할 때{'\n'}
-                {defaultPlan(step)
-                  .filter((item) => alternatives[item.machine]?.length)
-                  .map(
-                    (item) =>
-                      `${machines[item.machine].name} → ${alternatives[item.machine]!.map((id) => machines[id].name).join(' / ')}`,
-                  )
-                  .join('\n')}
-                {'\n'}하나를 골라 교체하는 후보예요. 모두 추가하지 않으며, 프리웨이트는 자세를 익힌
-                뒤 선택하세요.
+      <Text style={s.title}>내 루틴</Text>
+      <Text style={s.meta}>방문 순서대로 이어집니다. 날짜로 확정된 일정이 아니에요.</Text>
+
+      {[0, 1, 2].map((offset) => {
+        const step = cycle[(start + offset) % cycle.length];
+        const plan = offset === 0 ? today : resolvePlan(step, preferences);
+        const sessionSeconds = session
+          ? Math.min(
+              TOTAL_SECONDS,
+              session.phases.reduce((sum, x) => sum + x.seconds, 0),
+            )
+          : 0;
+        const names =
+          offset === 0 && session
+            ? [
+                ...new Set(session.phases.filter((x) => x.kind === 'work').map((x) => x.machine)),
+              ].map((id) => machines[id].name)
+            : plan.map((x) => machines[x.machine].name);
+        return (
+          <View key={offset} style={[s.card, offset === 0 && s.now]}>
+            <View style={s.between}>
+              <Text style={s.heading}>
+                {offset === 0 && active ? '진행 중' : visitLabels[offset]} · {routineNames[step]}
               </Text>
+              <Text style={s.value}>
+                {formatTime(offset === 0 && session ? sessionSeconds : planSeconds(plan))}
+              </Text>
+            </View>
+            <Text style={s.body}>{names.join(' · ')}</Text>
+            {offset === 0 && (
+              <Pressable accessibilityRole="button" onPress={onToday} style={s.button}>
+                <Text style={s.name}>
+                  {active ? '진행 화면으로 →' : '오늘의 운동에서 확인·수정 →'}
+                </Text>
+              </Pressable>
             )}
           </View>
-        ))}
-        <Text style={s.body}>
-          적용하면 기존 시작 운동·저장 루틴을 이 구성으로 바꿉니다. 지난 기록은 유지되며 순서는
-          기록에서 이어집니다. 적용 후 오늘의 운동에서 종목·세트·휴식을 수정할 수 있어요.
+        );
+      })}
+
+      <RoutineBuilder
+        preferences={preferences}
+        routine={routine}
+        session={session}
+        onSave={onSaveTemplate}
+        onReset={onResetTemplate}
+        onGuide={onGuide}
+      />
+
+      <View style={s.card}>
+        <Text style={s.heading}>루틴 종류 바꾸기</Text>
+        <View style={s.choices}>
+          {programs.map((program) => (
+            <Pressable
+              key={program.split}
+              accessibilityRole="button"
+              accessibilityState={{ selected: preview === program.split }}
+              onPress={() => setPreview(program.split)}
+              style={[s.choice, preview === program.split && s.selected]}
+            >
+              <Text style={s.name}>
+                {program.name}
+                {preferences.split === program.split ? ' · 사용 중' : ''}
+              </Text>
+              <Text style={s.meta}>{program.forWho}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Text style={s.meta}>
+          {routineCycle(preview)
+            .map((step) => `${routineNames[step]} ${formatTime(planSeconds(defaultPlan(step)))}`)
+            .join('  ·  ')}
+        </Text>
+        <Text style={s.meta}>
+          적용하면 시작 운동과 저장한 기본 루틴을 이 구성으로 바꿉니다. 지난 기록과 순서는 유지돼요.
         </Text>
         <Pressable
           disabled={active}
@@ -229,7 +201,7 @@ export function RoutinePlanner({
           style={[s.button, active && { opacity: 0.4 }]}
         >
           <Text style={s.name}>
-            {active ? '진행 중인 운동을 마친 뒤 변경 가능' : '이 루틴으로 운동하기 →'}
+            {active ? '진행 중인 운동을 마친 뒤 변경 가능' : '이 루틴으로 바꾸기 →'}
           </Text>
         </Pressable>
       </View>
@@ -241,104 +213,125 @@ export function RoutinePlanner({
             ? `${new Date(last.endedAt).toLocaleDateString('ko-KR')} · ${routineNames[last.routine]} · 직접 완료 ${last.confirmedSets}세트`
             : '아직 운동 기록이 없어요. 첫 운동부터 차곡차곡 쌓입니다.'}
         </Text>
-        {last && (
-          <Text style={s.body}>
-            {last.performed.map((id) => machines[id].name).join(' · ') || '직접 완료한 운동 없음'}
-          </Text>
-        )}
         <Pressable accessibilityRole="button" onPress={onHistory} style={s.button}>
-          <Text style={s.name}>어제·이전 기록 전체 보기 →</Text>
+          <Text style={s.name}>기록 전체 보기 →</Text>
         </Pressable>
       </View>
-      {[0, 1, 2].map((offset) => {
-        const step = cycle[(start + offset) % cycle.length];
-        const plan = offset === 0 ? today : resolvePlan(step, preferences);
-        return (
-          <View key={offset} style={s.card}>
-            <Text style={s.heading}>
-              {offset === 0
-                ? active
-                  ? '지금 진행 중'
-                  : '오늘 체크인할 운동'
-                : `${offset}번째 다음 방문 · 예정`}{' '}
-              · {routineNames[step]}
-            </Text>
-            {offset === 0 && session ? (
-              <>
-                <Text style={s.meta}>
-                  현재 조정된 일정 · 최대{' '}
-                  {formatTime(
-                    Math.min(
-                      2400,
-                      session.phases.reduce((sum, phase) => sum + phase.seconds, 0),
-                    ),
-                  )}{' '}
-                  · 일시정지 시간 제외
-                </Text>
-                {[
-                  ...new Set(
-                    session.phases
-                      .filter((phase) => phase.kind === 'work')
-                      .map((phase) => phase.machine),
-                  ),
-                ].map((id) => (
-                  <Pressable
-                    key={id}
-                    accessibilityRole="button"
-                    onPress={() => onGuide(id)}
-                    style={s.row}
-                  >
-                    <Text style={s.name}>
-                      {machines[id].name} ·{' '}
-                      {
-                        session.phases.filter(
-                          (phase) => phase.kind === 'work' && phase.machine === id,
-                        ).length
-                      }
-                      세트 ↗
-                    </Text>
-                  </Pressable>
-                ))}
-              </>
-            ) : (
-              <>
-                <Text style={s.meta}>
-                  {formatTime(planSeconds(plan))} 예상 · {plan.length}개 운동
-                  {preferences.savedPlan ? ' · 내 저장 루틴 적용' : ''}
-                </Text>
-                {showPlan(plan)}
-              </>
-            )}
-            {offset === 0 && (
-              <Pressable accessibilityRole="button" onPress={onToday} style={s.button}>
-                <Text style={s.name}>오늘 운동으로 가기 →</Text>
-              </Pressable>
-            )}
-          </View>
-        );
-      })}
-      <Text style={s.body}>
-        다음 순서는 직접 완료한 세트가 있는 루틴을 끝냈을 때의 예상입니다. 중간 종료·40분 종료만으로
-        순서를 넘기지 않아요. 휴식일과 컨디션은 별도로 고려해주세요.
-      </Text>
-      <Text style={s.body}>
-        큰 근육군을 고르게 훈련하고 꾸준히 이어가는 원칙을 참고한 FitIn 기본안입니다. 개인별
-        회복·훈련량을 계산한 처방은 아니며, 40분 이내에서 조절해요.
-      </Text>
-      <Pressable accessibilityRole="link" onPress={onSource}>
-        <Text style={s.name}>루틴 구성 참고 · ACSM 안내 ↗</Text>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: details }}
+        onPress={() => setDetails(!details)}
+        style={s.button}
+      >
+        <Text style={s.name}>
+          {details ? '자세한 설명 접기 ↑' : '구성 이유 · 반복 수 · 일정 예시 자세히 ↓'}
+        </Text>
       </Pressable>
+      {details && (
+        <View style={s.card}>
+          <Text style={s.heading}>{chosen.name}</Text>
+          <Text style={s.body}>{chosen.why}</Text>
+          <Text style={s.body}>{chosen.rhythm}</Text>
+          <Text style={s.heading}>운동일과 휴식일 · 일정 예시</Text>
+          <Text style={s.meta}>
+            요일표는 이해를 돕는 예시이며 저장되는 예약이 아닙니다. 실제 진행은 방문 순서에 따라
+            이어져요.
+          </Text>
+          {preview === 'ppl' && (
+            <View style={s.choices}>
+              {(['three', 'six', 'rolling'] as Attendance[]).map((value, index) => (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: attendance === value }}
+                  key={value}
+                  onPress={() => setAttendance(value)}
+                  style={[s.button, attendance === value && s.selected]}
+                >
+                  <Text style={s.name}>{['주 3회', '주 6회', '3일 운동 + 1일 휴식'][index]}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+          <View style={s.choices}>
+            {scheduleExample(preview, attendance).map((day) => (
+              <View
+                key={day.day}
+                style={[s.day, day.label === '휴식' && { backgroundColor: '#F2F3EE' }]}
+              >
+                <Text style={s.meta}>{day.day}</Text>
+                <Text style={s.name}>{day.label}</Text>
+              </View>
+            ))}
+          </View>
+          <Text style={s.body}>
+            {preview === 'ppl'
+              ? attendance === 'three'
+                ? '주 3회 PPL은 각 부위를 주 1회 훈련하는 예시예요. 입문·불규칙 방문이라면 전신 A/B를 먼저 고려하세요. 쉬는 날 수만으로 완전 회복을 보장하지 않습니다.'
+                : attendance === 'six'
+                  ? '각 부위를 주 2회 반복하는 빈도 높은 예시입니다. 숙련자도 피로·수면·통증에 따라 휴식일과 세트 수를 조절하세요. 주 6회가 자동으로 더 좋은 결과를 보장하지 않아요.'
+                  : '요일에 고정하지 않고 4일 주기를 반복합니다. 달력의 매주 같은 요일에 같은 부위가 오지는 않아요.'
+              : '요일 배치는 예시이며 예약이 아닙니다. 방문하지 못한 날을 몰아서 보충하지 않고 다음 체크인에서 순서를 이어가요.'}
+          </Text>
+          <Text style={s.heading}>이대로 시작할 때</Text>
+          <Text style={s.body}>
+            기본은 각 운동 3세트, 세트당 60초예요. 세트당 시간과 휴식은 내 기본 루틴에서 바꿀 수
+            있고, 바꾸면 위의 예상 시간에 바로 반영됩니다. 횟수를 채우고 먼저 끝나면 세트 완료를
+            누르고, 필요하면 +30초 더 또는 일시정지를 사용하세요.
+          </Text>
+          {routineCycle(preview).map((step) => (
+            <View key={step}>
+              <Text style={s.heading}>
+                {routineNames[step]} · {formatTime(planSeconds(defaultPlan(step)))} ·{' '}
+                {routinePurpose[step]}
+              </Text>
+              {showPlan(defaultPlan(step))}
+              <Text style={s.meta}>
+                세트당 시작 반복 범위 ·{' '}
+                {defaultPlan(step)
+                  .map((item) => `${machines[item.machine].name} ${repetitionGuide(item.machine)}`)
+                  .join(' / ')}
+              </Text>
+              {defaultPlan(step).some((item) => alternatives[item.machine]?.length) && (
+                <Text style={s.body}>
+                  기구가 없거나 다른 동작을 원할 때{'\n'}
+                  {defaultPlan(step)
+                    .filter((item) => alternatives[item.machine]?.length)
+                    .map(
+                      (item) =>
+                        `${machines[item.machine].name} → ${alternatives[item.machine]!.map((id) => machines[id].name).join(' / ')}`,
+                    )
+                    .join('\n')}
+                  {'\n'}하나를 골라 교체하는 후보예요. 모두 추가하지 않으며, 프리웨이트는 자세를
+                  익힌 뒤 선택하세요.
+                </Text>
+              )}
+            </View>
+          ))}
+          <Text style={s.body}>
+            다음 순서는 직접 완료한 세트가 있는 루틴을 끝냈을 때의 예상입니다. 중간 종료·40분
+            종료만으로 순서를 넘기지 않아요. 큰 근육군을 고르게 훈련하고 꾸준히 이어가는 원칙을
+            참고한 FitIn 기본안이며, 개인별 회복·훈련량을 계산한 처방은 아닙니다.
+          </Text>
+          <Pressable accessibilityRole="link" onPress={onSource}>
+            <Text style={s.name}>루틴 구성 참고 · ACSM 안내 ↗</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
 const s = StyleSheet.create({
-  page: { paddingTop: 28, gap: 18 },
+  page: { paddingTop: 28, gap: 14 },
   day: { minWidth: 72, padding: 12, gap: 8, borderRadius: 12, backgroundColor: '#E4EEE8' },
   title: { fontSize: 26, fontWeight: '800', color: '#17343A' },
-  card: { backgroundColor: 'white', borderRadius: 20, padding: 22, gap: 12 },
+  card: { backgroundColor: 'white', borderRadius: 20, padding: 22, gap: 10 },
+  now: { borderWidth: 2, borderColor: '#648A7A' },
   heading: { fontSize: 16, fontWeight: '700', color: '#244348' },
   body: { fontSize: 13, lineHeight: 23, color: '#647C7D' },
   meta: { fontSize: 11, lineHeight: 19, color: '#82928D' },
+  value: { fontSize: 13, fontWeight: '700', color: '#628174', fontVariant: ['tabular-nums'] },
+  between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -349,14 +342,14 @@ const s = StyleSheet.create({
   },
   name: { color: '#244348', fontSize: 13, fontWeight: '600' },
   number: { color: '#C46F5B' },
-  button: { backgroundColor: '#DAE9DF', padding: 16, borderRadius: 12, alignItems: 'center' },
-  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  button: { backgroundColor: '#DAE9DF', padding: 14, borderRadius: 12, alignItems: 'center' },
+  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   choice: {
     flexGrow: 1,
-    flexBasis: 280,
-    padding: 18,
-    borderRadius: 16,
-    gap: 8,
+    flexBasis: 220,
+    padding: 14,
+    borderRadius: 14,
+    gap: 6,
     borderWidth: 2,
     borderColor: '#E3EAE6',
     backgroundColor: 'white',

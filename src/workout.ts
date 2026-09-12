@@ -1,6 +1,12 @@
 /** Platform-independent clock and command engine. All times are active seconds. */
 export const TOTAL_SECONDS = 2400;
 export const PREPARE_SECONDS = 10;
+export const MOVE_SECONDS = 60;
+export const DEFAULT_REST = 90;
+export const DEFAULT_WORK = 60;
+/** Template membership bound. Execution is still limited by the 40-minute cap. */
+export const MAX_ITEMS = 12;
+export const REST_CHOICES = [45, 60, 75, 90, 105, 120, 150, 180];
 export const machines = {
   chestPress: {
     name: '체스트 프레스',
@@ -254,18 +260,37 @@ export type MachineId = keyof typeof machines;
 export type Level = 'beginner' | 'intermediate' | 'advanced';
 export type Split = 'full' | 'upperLower' | 'ppl' | 'fixed';
 export type Routine = 'fullA' | 'fullB' | 'upper' | 'lower' | 'push' | 'pull' | 'legs';
-export type PlanItem = { machine: MachineId; sets: number; rest: number; work: number };
+/**
+ * `rest` and `work` are always the effective seconds for this item.
+ * `finisher` marks an explicit end-of-session addition: only finishers may repeat a movement.
+ * `restOverride` opts the item out of global rest propagation.
+ */
+export type PlanItem = {
+  machine: MachineId;
+  sets: number;
+  rest: number;
+  work: number;
+  finisher?: boolean;
+  restOverride?: boolean;
+};
 export type Preferences = {
   level: Level;
   split: Split;
   starters: MachineId[];
+  /** Legacy version-2 fixed plan. Kept as the fallback base; never silently discarded. */
   savedPlan: PlanItem[] | null;
+  /** Default rest for every set that has no explicit per-exercise override. */
+  globalRest: number;
+  /** Persistent goal templates per routine. Today's copy is derived, never stored here. */
+  templates: Partial<Record<Routine, PlanItem[]>>;
 };
 export const defaultPreferences: Preferences = {
   level: 'beginner',
   split: 'full',
   starters: [],
   savedPlan: null,
+  globalRest: DEFAULT_REST,
+  templates: {},
 };
 export type Phase = {
   id: string;
@@ -298,14 +323,14 @@ export type RecordEntry = {
   performed: MachineId[];
 };
 export type Data = {
-  version: 2;
+  version: 3;
   history: RecordEntry[];
   session: Session | null;
   sound: boolean;
   preferences: Preferences;
 };
 export const emptyData: Data = {
-  version: 2,
+  version: 3,
   history: [],
   session: null,
   sound: true,
@@ -349,11 +374,26 @@ export function routineOrder(routine: Routine) {
   return [...plans[routine]];
 }
 export function defaultPlan(routine: Routine): PlanItem[] {
-  return plans[routine].map((machine) => ({ machine, sets: 3, work: 60, rest: 90 }));
+  return plans[routine].map((machine) => ({
+    machine,
+    sets: 3,
+    work: DEFAULT_WORK,
+    rest: DEFAULT_REST,
+  }));
+}
+/** The persistent goal template: stored template, else the legacy fixed plan, else the default. */
+export function resolveTemplate(routine: Routine, preferences: Preferences): PlanItem[] {
+  const stored = preferences.templates?.[routine];
+  if (stored?.length) return stored.map((x) => ({ ...x }));
+  // A version-2 fixed plan already carries rest values the user chose explicitly; global rest
+  // never overwrites them. Only a generated default inherits the global value.
+  const legacy = preferences.savedPlan;
+  if (legacy?.length) return legacy.map((x) => ({ ...x }));
+  return applyGlobalRest(defaultPlan(routine), preferences.globalRest ?? DEFAULT_REST);
 }
 /** One resolver for today's plan and future previews; legacy saved plans retain their behavior. */
 export function resolvePlan(routine: Routine, preferences: Preferences): PlanItem[] {
-  const plan = (preferences.savedPlan ?? defaultPlan(routine)).map((x) => ({ ...x }));
+  const plan = resolveTemplate(routine, preferences);
   if (!preferences.starters.length || ['lower', 'legs'].includes(routine)) return plan;
   try {
     return withStarters(plan, preferences.starters).items;
@@ -361,21 +401,47 @@ export function resolvePlan(routine: Routine, preferences: Preferences): PlanIte
     return plan;
   }
 }
-export function planSeconds(items: PlanItem[]) {
-  return (
-    PREPARE_SECONDS +
-    Math.max(0, items.length - 1) * 60 +
-    items.reduce((s, x) => s + x.sets * x.work + (x.sets - 1) * x.rest, 0)
+/** Global rest reaches every set that has not been explicitly overridden. */
+export function applyGlobalRest(items: PlanItem[], rest: number): PlanItem[] {
+  return items.map((x) => (x.restOverride ? { ...x } : { ...x, rest }));
+}
+/**
+ * Marks any item whose rest already differs from the global value as an explicit override, so an
+ * editor labels it honestly and a later global-rest change cannot silently discard it. Used when
+ * loading a legacy or hand-edited plan into an editor, never on a plan that is about to run.
+ */
+export function markRestOverrides(items: PlanItem[], rest: number): PlanItem[] {
+  return items.map((x) =>
+    x.restOverride || x.rest === rest ? { ...x } : { ...x, restOverride: true },
   );
 }
-export function validatePlan(items: PlanItem[]): void {
+/** Exercise time, rest and equipment transitions are reported separately, never merged. */
+export function planBreakdown(items: PlanItem[]) {
+  const work = items.reduce((n, x) => n + x.sets * x.work, 0);
+  const rest = items.reduce((n, x) => n + (x.sets - 1) * x.rest, 0);
+  const move = Math.max(0, items.length - 1) * MOVE_SECONDS;
+  return { setup: PREPARE_SECONDS, work, rest, move, total: PREPARE_SECONDS + work + rest + move };
+}
+export function planSeconds(items: PlanItem[]) {
+  return planBreakdown(items).total;
+}
+/** Longest leading run that fits the cap. Dropped items are reported, never silently removed. */
+export function capPlan(items: PlanItem[]): { items: PlanItem[]; dropped: PlanItem[] } {
+  const kept = [...items];
+  while (kept.length > 1 && planSeconds(kept) > TOTAL_SECONDS) kept.pop();
+  return { items: kept, dropped: items.slice(kept.length) };
+}
+function checkItems(items: PlanItem[]): void {
+  const shapeError = Error(
+    '종목은 1–12개, 세트 1–5개, 운동 20–180초, 휴식 30–180초로 설정하세요. 같은 운동은 마무리 종목으로만 반복할 수 있어요.',
+  );
   if (
     !Array.isArray(items) ||
     items.length < 1 ||
-    items.length > 8 ||
-    new Set(items.map((x) => x.machine)).size !== items.length ||
+    items.length > MAX_ITEMS ||
     items.some(
       (x) =>
+        !x ||
         !Object.hasOwn(machines, x.machine) ||
         !Number.isInteger(x.sets) ||
         x.sets < 1 ||
@@ -385,10 +451,24 @@ export function validatePlan(items: PlanItem[]): void {
         x.work > 180 ||
         !Number.isInteger(x.rest) ||
         x.rest < 30 ||
-        x.rest > 180,
+        x.rest > 180 ||
+        (x.finisher !== undefined && typeof x.finisher !== 'boolean') ||
+        (x.restOverride !== undefined && typeof x.restOverride !== 'boolean'),
     )
   )
-    throw Error('종목은 중복 없이 1–8개, 세트 1–5개, 운동 20–180초, 휴식 30–180초로 설정하세요.');
+    throw shapeError;
+  const seen = new Set<MachineId>();
+  for (const x of items) {
+    if (seen.has(x.machine) && !x.finisher) throw shapeError;
+    seen.add(x.machine);
+  }
+}
+/** A goal template may exceed the cap on purpose; only execution is capped. */
+export function validateTemplate(items: PlanItem[]): void {
+  checkItems(items);
+}
+export function validatePlan(items: PlanItem[]): void {
+  checkItems(items);
   if (planSeconds(items) > TOTAL_SECONDS)
     throw Error('40분을 넘었어요. 운동이나 세트를 줄여주세요.');
 }
@@ -397,29 +477,31 @@ export function withStarters(
   items: PlanItem[],
   starters: MachineId[],
 ): { items: PlanItem[]; replaced: MachineId[] } {
-  let result = items.map((x) => ({ ...x }));
+  const result = items.map((x) => ({ ...x }));
   const replaced: MachineId[] = [];
+  const open = (x: PlanItem) => !starters.includes(x.machine) && !x.finisher;
   for (const machine of [...new Set(starters)]) {
     if (result.some((x) => x.machine === machine)) continue;
     let index = result.findIndex(
-      (x) =>
-        !starters.includes(x.machine) && machines[x.machine].pattern === machines[machine].pattern,
+      (x) => open(x) && machines[x.machine].pattern === machines[machine].pattern,
     );
     if (index < 0)
       index = result.findIndex(
-        (x) => !starters.includes(x.machine) && machines[x.machine].area === machines[machine].area,
+        (x) => open(x) && machines[x.machine].area === machines[machine].area,
       );
-    if (index < 0) index = result.findLastIndex((x) => !starters.includes(x.machine));
+    if (index < 0) index = result.findLastIndex(open);
     if (index < 0) throw Error('시작 운동 수를 줄여주세요.');
     replaced.push(result[index].machine);
     result[index] = { ...result[index], machine };
   }
-  result.sort((a, b) => {
-    const ai = starters.indexOf(a.machine),
-      bi = starters.indexOf(b.machine);
-    return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
-  });
-  validatePlan(result);
+  // Finishers stay pinned at the end; a starter preference never pulls one forward.
+  const rank = (x: PlanItem) => {
+    if (x.finisher) return 1000;
+    const at = starters.indexOf(x.machine);
+    return at < 0 ? 99 : at;
+  };
+  result.sort((a, b) => rank(a) - rank(b));
+  validateTemplate(result);
   return { items: result, replaced };
 }
 export function buildPhases(items: PlanItem[]): Phase[] {
@@ -427,12 +509,18 @@ export function buildPhases(items: PlanItem[]): Phase[] {
   const phases: Phase[] = [
     { id: 'prepare', kind: 'prepare', seconds: 10, machine: items[0].machine },
   ];
+  // The plan index prefixes every id so a repeated finisher keeps distinct phases and records.
   items.forEach((x, i) => {
     if (i > 0)
-      phases.push({ id: `${x.machine}:move`, kind: 'move', seconds: 60, machine: x.machine });
+      phases.push({
+        id: `${i}:${x.machine}:move`,
+        kind: 'move',
+        seconds: MOVE_SECONDS,
+        machine: x.machine,
+      });
     for (let set = 1; set <= x.sets; set++) {
       phases.push({
-        id: `${x.machine}:work:${set}`,
+        id: `${i}:${x.machine}:work:${set}`,
         kind: 'work',
         seconds: x.work,
         machine: x.machine,
@@ -441,7 +529,7 @@ export function buildPhases(items: PlanItem[]): Phase[] {
       });
       if (set < x.sets)
         phases.push({
-          id: `${x.machine}:rest:${set}`,
+          id: `${i}:${x.machine}:rest:${set}`,
           kind: 'rest',
           seconds: x.rest,
           machine: x.machine,
@@ -544,21 +632,25 @@ export function swapUpcoming(
   now: number,
 ): Session {
   const p = position(s, now);
-  const firstIndex = s.phases.findIndex((x) => x.machine === first),
-    secondIndex = s.phases.findIndex((x) => x.machine === second);
-  if (first === second || firstIndex <= p.index || secondIndex <= p.index) return s;
-  const order = [...new Set(s.phases.filter((x) => x.kind !== 'prepare').map((x) => x.machine))];
-  const a = order.indexOf(first),
-    b = order.indexOf(second);
+  if (first === second) return s;
+  // Each block is one plan item: a leading move phase plus its work/rest phases.
+  const blocks: { start: number; phases: Phase[] }[] = [];
+  s.phases.forEach((phase, index) => {
+    if (phase.kind === 'prepare') return;
+    if (phase.kind === 'move' || !blocks.length) blocks.push({ start: index, phases: [phase] });
+    else blocks[blocks.length - 1].phases.push(phase);
+  });
+  // Block 0 has no move phase, so it is never reordered into the middle of the session.
+  const find = (machine: MachineId) =>
+    blocks.findIndex(
+      (block, index) => index > 0 && block.start > p.index && block.phases[0].machine === machine,
+    );
+  const a = find(first),
+    b = find(second);
+  if (a < 0 || b < 0) return s;
+  const order = blocks.map((block) => block.phases);
   [order[a], order[b]] = [order[b], order[a]];
-  return {
-    ...s,
-    revision: s.revision + 1,
-    phases: [
-      s.phases[0],
-      ...order.flatMap((id) => s.phases.filter((x) => x.kind !== 'prepare' && x.machine === id)),
-    ],
-  };
+  return { ...s, revision: s.revision + 1, phases: [s.phases[0], ...order.flat()] };
 }
 export function finish(data: Data, now: number, reason: RecordEntry['reason']): Data {
   const s = data.session;
