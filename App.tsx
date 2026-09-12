@@ -207,7 +207,7 @@ function FitIn() {
           <View style={s.headerRight}>
             <View style={s.dot} />
             <Text style={s.small}>내 기기에만 저장</Text>
-            <Text style={s.buildTag}>DEV 0.2</Text>
+            <Text style={s.buildTag}>0.0.1 · PREVIEW</Text>
           </View>
         </View>
         <View style={s.nav}>

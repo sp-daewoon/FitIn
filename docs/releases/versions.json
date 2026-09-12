@@ -1,0 +1,7 @@
+{
+  "source": { "version": "0.0.1", "tag": "v0.0.1", "status": "prerelease" },
+  "web": { "version": "0.0.1", "tag": "web/v0.0.1", "status": "preview", "distribution": "local development / GitHub source" },
+  "ios": { "version": "0.0.1", "build": 1, "status": "unreleased", "tag": null },
+  "android": { "version": "0.0.1", "build": 1, "status": "unreleased", "tag": null },
+  "watchos": { "version": "0.0.1", "build": 1, "status": "unimplemented", "tag": null }
+}
