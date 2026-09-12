@@ -28,6 +28,10 @@ const additions: MachineId[] = [
   'dumbbellRow',
   'lateralRaise',
   'dumbbellCurl',
+  'tricepsPushdown',
+  'facePull',
+  'romanianDeadlift',
+  'crunch',
 ];
 
 test('new exercises run through spoken sets and survive saved plans, sessions and history', () => {
@@ -70,7 +74,7 @@ test('every exercise points to its own existing atlas cell, including across atl
   const cells: string[] = [];
   for (const asset of manifest.assets) {
     assert.ok(existsSync(new URL(`../${asset.file}`, import.meta.url)));
-    assert.equal(asset.cells.length, 9);
+    assert.equal(asset.cells.length, (asset.columns ?? 3) ** 2);
     cells.push(...asset.cells);
   }
   assert.equal(new Set(cells).size, cells.length);

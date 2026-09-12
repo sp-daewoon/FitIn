@@ -33,7 +33,7 @@ export function ExerciseLibrary({ onSelect }: { onSelect: (id: MachineId) => voi
         style={styles.search}
       />
       <View style={styles.filters}>
-        {['전체', '머신', '바벨', '덤벨'].map((type) => (
+        {['전체', '머신', '바벨', '덤벨', '맨몸'].map((type) => (
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ selected: equipment === type }}

@@ -4,12 +4,14 @@ import { MachineId, machines } from './workout';
 const atlases = [
   require('../assets/exercises/atlas-v2-draft.png'),
   require('../assets/exercises/freeweights-atlas-draft.png'),
+  require('../assets/exercises/ppl-atlas-draft.png'),
 ];
 /** Local atlases, clipped by the UI. Existing exercise IDs keep their original image cells. */
 export function ExerciseVisual({ machine, size }: { machine: MachineId; size?: number }) {
   const [width, setWidth] = useState(size ?? 320);
   const slot = machines[machine].atlas;
-  const index = slot % 9;
+  const columns = slot >= 18 ? 2 : 3;
+  const index = slot >= 18 ? slot - 18 : slot % 9;
   return (
     <View
       accessible
@@ -26,14 +28,14 @@ export function ExerciseVisual({ machine, size }: { machine: MachineId; size?: n
       }}
     >
       <Image
-        source={atlases[Math.floor(slot / 9)]}
+        source={atlases[slot >= 18 ? 2 : Math.floor(slot / 9)]}
         resizeMode="stretch"
         style={{
           position: 'absolute',
-          width: width * 3,
-          height: width * 3,
-          left: -(index % 3) * width,
-          top: -Math.floor(index / 3) * width,
+          width: width * columns,
+          height: width * columns,
+          left: -(index % columns) * width,
+          top: -Math.floor(index / columns) * width,
         }}
       />
     </View>

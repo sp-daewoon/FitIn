@@ -17,5 +17,14 @@
       "cells": ["squat","benchPress","deadlift","barbellRow","overheadPress","dumbbellBenchPress","dumbbellRow","lateralRaise","dumbbellCurl"],
       "reviewRequired": "Anatomy, bar paths, grip and shoulder positions, bench support, safety equipment, target-muscle emphasis and cell clipping. Static examples are not a complete motion guide."
     }
+    ,{
+      "file": "assets/exercises/ppl-atlas-draft.png",
+      "origin": "OpenAI image generation, original atlas, 2026-09-12",
+      "status": "draft",
+      "columns": 2,
+      "layout": "2 equal columns by 2 equal rows; runtime clipping; global slots 18 through 21",
+      "cells": ["tricepsPushdown", "facePull", "romanianDeadlift", "crunch"],
+      "reviewRequired": "Cable geometry, rope grip, face pull rotation, neutral spine in hip hinge, crunch range and anatomy require qualified review."
+    }
   ]
 }

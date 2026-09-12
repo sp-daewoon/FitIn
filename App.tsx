@@ -18,6 +18,7 @@ import { ExerciseVisual } from './src/ExerciseVisual';
 import { ExerciseLibrary } from './src/ExerciseLibrary';
 import { RoutinePlanner } from './src/RoutinePlanner';
 import { exerciseVideos, videoSearch } from './src/videos';
+import { repetitionGuide } from './src/programGuidance';
 import { Harness } from './src/Harness';
 import {
   defaultPlan,
@@ -181,6 +182,9 @@ function FitIn() {
         <Text style={s.muscleText}>주요 자극 {m.area}</Text>
       </View>
       <Text style={s.support}>함께 쓰는 부위 {m.secondary}</Text>
+      <Text style={s.support}>
+        세트당 {repetitionGuide(machine)} 시작 범위 · 자세를 유지할 수 있는 무게
+      </Text>
       <View style={s.line} />
       <Text style={s.coachingLabel}>이 동작에서 하나만 기억해요</Text>
       <Text style={s.cue}>{m.cue}</Text>

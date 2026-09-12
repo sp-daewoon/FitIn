@@ -203,6 +203,52 @@ export const machines = {
     cue: '팔꿈치를 몸 옆에 두고 몸통 반동 없이 덤벨을 천천히 올려주세요.',
     setup: '양손에 가벼운 덤벨을 들고 손바닥을 앞쪽으로 향하게 하세요.',
   },
+  tricepsPushdown: {
+    name: '케이블 삼두 푸시다운',
+    equipment: '머신',
+    region: '상체',
+    area: '삼두',
+    secondary: '코어',
+    pattern: '팔꿈치 펴기',
+    atlas: 18,
+    cue: '팔꿈치를 몸 옆에 고정하고 팔꿈치를 펴며 로프를 아래로 밀어주세요.',
+    setup: '도르래를 위쪽에 두고 로프를 연결하세요. 가벼운 무게로 시작하고 몸통 반동을 피하세요.',
+  },
+  facePull: {
+    name: '케이블 페이스 풀',
+    equipment: '머신',
+    region: '상체',
+    area: '뒤쪽 어깨 · 등 위쪽',
+    secondary: '어깨 회전근',
+    pattern: '후면 어깨 당기기',
+    atlas: 19,
+    cue: '로프를 얼굴 쪽으로 당기며 손을 벌려주세요. 허리를 젖히거나 어깨를 으쓱하지 마세요.',
+    setup:
+      '도르래를 얼굴 높이에 맞추고 로프를 연결하세요. 처음에는 직원에게 높이와 당기는 방향을 확인받으세요.',
+  },
+  romanianDeadlift: {
+    name: '덤벨 루마니안 데드리프트',
+    equipment: '덤벨',
+    region: '하체',
+    area: '엉덩이 · 허벅지 뒤',
+    secondary: '척추기립근 · 코어',
+    pattern: '힙 힌지',
+    atlas: 20,
+    cue: '무릎을 살짝 굽힌 채 엉덩이를 뒤로 보내세요. 허리의 중립을 유지할 수 있는 범위까지만 내려가요.',
+    setup:
+      '가벼운 덤벨을 허벅지 앞에 들고 서세요. 바닥에 닿는 것이 목표가 아니며, 처음에는 힙 힌지 자세를 확인받으세요.',
+  },
+  crunch: {
+    name: '크런치',
+    equipment: '맨몸',
+    region: '코어',
+    area: '복근',
+    secondary: '복부 안정근',
+    pattern: '몸통 굽히기',
+    atlas: 21,
+    cue: '목을 당기지 않고 갈비뼈를 골반 쪽으로 가까이 하며 어깨를 조금 들어주세요.',
+    setup: '매트에 누워 무릎을 굽히고 발을 바닥에 둡니다. 팔은 가슴 앞에 교차하고 천천히 움직여요.',
+  },
 } as const;
 export type MachineId = keyof typeof machines;
 export type Level = 'beginner' | 'intermediate' | 'advanced';
@@ -270,9 +316,9 @@ const plans: Record<Routine, MachineId[]> = {
   fullB: ['legCurl', 'row', 'chestPress', 'legExtension', 'latPulldown'],
   upper: ['chestPress', 'row', 'latPulldown', 'pecDeck'],
   lower: ['legPress', 'legCurl', 'legExtension'],
-  push: ['chestPress', 'pecDeck', 'shoulderPress'],
-  pull: ['latPulldown', 'row'],
-  legs: ['legPress', 'legCurl', 'legExtension'],
+  push: ['chestPress', 'shoulderPress', 'pecDeck', 'lateralRaise', 'tricepsPushdown'],
+  pull: ['latPulldown', 'row', 'facePull', 'dumbbellCurl'],
+  legs: ['legPress', 'romanianDeadlift', 'legCurl', 'legExtension', 'crunch'],
 };
 export const routineNames: Record<Routine, string> = {
   fullA: '전신 A',

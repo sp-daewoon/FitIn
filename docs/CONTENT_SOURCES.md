@@ -8,6 +8,8 @@ FitIn's four program choices reuse its existing seven session presets. They are 
 
 ## External video references
 
+The richer PPL examples added on 2026-09-12 retain the same evidence limits. [ACSM's 2026 update](https://acsm.org/resistance-training-guidelines-update-2026/) emphasizes consistent major-muscle-group training at least twice weekly; it does not establish PPL as universally best or guarantee recovery in fixed rest days. User-provided PPL lists are examples and alternatives, not instructions to include every exercise in one 40-minute session. FitIn fills missing movement roles while avoiding multiple synonymous rowing variants. Repetition/load starting cues and exact exercise order need qualified content review; no claim of individualized biomechanical optimization is made.
+
 [Deb C Fitness's machine guide](https://www.debcfitness.com/post/beginner-strength-training-machines-how-to-start-with-confidence-at-the-gym) explicitly associates the following links with the named movements:
 
 - Chest press, plate loaded: https://youtube.com/shorts/R0kDmBrxioo

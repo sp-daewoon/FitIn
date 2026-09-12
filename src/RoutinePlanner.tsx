@@ -16,6 +16,13 @@ import {
   Session,
 } from './workout';
 import { planSeconds } from './workout';
+import {
+  alternatives,
+  Attendance,
+  repetitionGuide,
+  routinePurpose,
+  scheduleExample,
+} from './programGuidance';
 
 const programs: { split: Split; name: string; forWho: string; why: string; rhythm: string }[] = [
   {
@@ -71,6 +78,7 @@ export function RoutinePlanner({
   onSource: () => void;
 }) {
   const [preview, setPreview] = useState<Split>(preferences.split);
+  const [attendance, setAttendance] = useState<Attendance>('three');
   const active = !!session;
   const cycle = routineCycle(preferences.split);
   const start = Math.max(0, cycle.indexOf(routine));
@@ -90,6 +98,9 @@ export function RoutinePlanner({
           <Text style={s.meta}>
             {machines[item.machine].area} · {item.sets}세트 · 휴식 {item.rest}초
           </Text>
+          <Text style={s.meta}>
+            세트당 {repetitionGuide(item.machine)} · {machines[item.machine].pattern}
+          </Text>
         </View>
         <Text>↗</Text>
       </Pressable>
@@ -101,6 +112,128 @@ export function RoutinePlanner({
         1. 루틴 고르기 → 2. 오늘 순서 확인·수정 → 3. 체크인{'\n'}요일이 바뀌어도 순서를 건너뛰지
         않아요. 다음 방문은 내일로 확정된 일정이 아닙니다.
       </Text>
+      <Text style={s.title}>나에게 맞는 루틴 고르기</Text>
+      <View style={s.card}>
+        <Text style={s.heading}>처음이라 선택이 어렵다면</Text>
+        <Text style={s.body}>
+          주 2~3회 또는 불규칙 방문 → 전신 A/B{'\n'}주 4회, 부위별로 집중 → 상체/하체{'\n'}분할에
+          익숙하고 방문 횟수가 충분함 → PPL{'\n'}빈도만으로 회복 상태를 판단하지 않아요. 먼저 구성과
+          시간부터 확인하세요.
+        </Text>
+        <Pressable accessibilityRole="button" onPress={() => setPreview('full')} style={s.button}>
+          <Text style={s.name}>입문 추천 · 전신 A/B 구성 보기 →</Text>
+        </Pressable>
+      </View>
+      <View style={s.choices}>
+        {programs.map((program) => (
+          <Pressable
+            key={program.split}
+            accessibilityRole="button"
+            accessibilityState={{ selected: preview === program.split }}
+            onPress={() => setPreview(program.split)}
+            style={[s.choice, preview === program.split && s.selected]}
+          >
+            <Text style={s.heading}>
+              {program.name}
+              {preferences.split === program.split ? ' · 사용 중' : ''}
+            </Text>
+            <Text style={s.body}>{program.forWho}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <View style={s.card}>
+        <Text style={s.heading}>{chosen.name} · 전체 구성 미리보기</Text>
+        <Text style={s.body}>{chosen.why}</Text>
+        <Text style={s.body}>{chosen.rhythm}</Text>
+        <Text style={s.heading}>운동일과 휴식일 · 일정 예시</Text>
+        <Text style={s.meta}>
+          요일표는 이해를 돕는 예시이며 저장되는 예약이 아닙니다. 실제 진행은 방문 순서에 따라
+          이어져요.
+        </Text>
+        {preview === 'ppl' && (
+          <View style={s.choices}>
+            {(['three', 'six', 'rolling'] as Attendance[]).map((value, index) => (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: attendance === value }}
+                key={value}
+                onPress={() => setAttendance(value)}
+                style={[s.button, attendance === value && s.selected]}
+              >
+                <Text style={s.name}>{['주 3회', '주 6회', '3일 운동 + 1일 휴식'][index]}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+        <View style={s.choices}>
+          {scheduleExample(preview, attendance).map((day) => (
+            <View
+              key={day.day}
+              style={[s.day, day.label === '휴식' && { backgroundColor: '#F2F3EE' }]}
+            >
+              <Text style={s.meta}>{day.day}</Text>
+              <Text style={s.name}>{day.label}</Text>
+            </View>
+          ))}
+        </View>
+        <Text style={s.body}>
+          {preview === 'ppl'
+            ? attendance === 'three'
+              ? '주 3회 PPL은 각 부위를 주 1회 훈련하는 예시예요. 입문·불규칙 방문이라면 전신 A/B를 먼저 고려하세요. 쉬는 날 수만으로 완전 회복을 보장하지 않습니다.'
+              : attendance === 'six'
+                ? '각 부위를 주 2회 반복하는 빈도 높은 예시입니다. 숙련자도 피로·수면·통증에 따라 휴식일과 세트 수를 조절하세요. 주 6회가 자동으로 더 좋은 결과를 보장하지 않아요.'
+                : '요일에 고정하지 않고 4일 주기를 반복합니다. 달력의 매주 같은 요일에 같은 부위가 오지는 않아요.'
+            : '요일 배치는 예시이며 예약이 아닙니다. 방문하지 못한 날을 몰아서 보충하지 않고 다음 체크인에서 순서를 이어가요.'}
+        </Text>
+        <Text style={s.heading}>이대로 시작할 때</Text>
+        <Text style={s.body}>
+          각 운동 3세트, 세트당 아래 반복 범위로 시작해요. 마지막에 2~3회는 더 할 수 있을 정도의
+          가벼운 무게로 자세를 익히세요. 60초는 진행 예상 시간이며, 횟수를 채우고 먼저 끝나면 세트
+          완료를 눌러요. 필요하면 +30초 더 또는 일시정지를 사용하세요. 휴식은 90초, 기구 이동·정리는
+          60초가 포함됩니다.
+        </Text>
+        {routineCycle(preview).map((step) => (
+          <View key={step}>
+            <Text style={s.heading}>
+              {routineNames[step]} · {formatTime(planSeconds(defaultPlan(step)))}
+            </Text>
+            <Text style={s.body}>
+              {routinePurpose[step]} · {defaultPlan(step).reduce((sum, item) => sum + item.sets, 0)}
+              세트 · 40분까지 여유 {formatTime(2400 - planSeconds(defaultPlan(step)))}
+            </Text>
+            {showPlan(defaultPlan(step))}
+            {defaultPlan(step).some((item) => alternatives[item.machine]?.length) && (
+              <Text style={s.body}>
+                기구가 없거나 다른 동작을 원할 때{'\n'}
+                {defaultPlan(step)
+                  .filter((item) => alternatives[item.machine]?.length)
+                  .map(
+                    (item) =>
+                      `${machines[item.machine].name} → ${alternatives[item.machine]!.map((id) => machines[id].name).join(' / ')}`,
+                  )
+                  .join('\n')}
+                {'\n'}하나를 골라 교체하는 후보예요. 모두 추가하지 않으며, 프리웨이트는 자세를 익힌
+                뒤 선택하세요.
+              </Text>
+            )}
+          </View>
+        ))}
+        <Text style={s.body}>
+          적용하면 기존 시작 운동·저장 루틴을 이 구성으로 바꿉니다. 지난 기록은 유지되며 순서는
+          기록에서 이어집니다. 적용 후 오늘의 운동에서 종목·세트·휴식을 수정할 수 있어요.
+        </Text>
+        <Pressable
+          disabled={active}
+          accessibilityRole="button"
+          onPress={() => onChoose(preview)}
+          style={[s.button, active && { opacity: 0.4 }]}
+        >
+          <Text style={s.name}>
+            {active ? '진행 중인 운동을 마친 뒤 변경 가능' : '이 루틴으로 운동하기 →'}
+          </Text>
+        </Pressable>
+      </View>
+
       <View style={s.card}>
         <Text style={s.heading}>지난 운동</Text>
         <Text style={s.body}>
@@ -188,51 +321,6 @@ export function RoutinePlanner({
         다음 순서는 직접 완료한 세트가 있는 루틴을 끝냈을 때의 예상입니다. 중간 종료·40분 종료만으로
         순서를 넘기지 않아요. 휴식일과 컨디션은 별도로 고려해주세요.
       </Text>
-      <Text style={s.title}>나에게 맞는 루틴 고르기</Text>
-      <View style={s.choices}>
-        {programs.map((program) => (
-          <Pressable
-            key={program.split}
-            accessibilityRole="button"
-            accessibilityState={{ selected: preview === program.split }}
-            onPress={() => setPreview(program.split)}
-            style={[s.choice, preview === program.split && s.selected]}
-          >
-            <Text style={s.heading}>
-              {program.name}
-              {preferences.split === program.split ? ' · 사용 중' : ''}
-            </Text>
-            <Text style={s.body}>{program.forWho}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <View style={s.card}>
-        <Text style={s.heading}>{chosen.name} · 전체 구성 미리보기</Text>
-        <Text style={s.body}>{chosen.why}</Text>
-        <Text style={s.body}>{chosen.rhythm}</Text>
-        {routineCycle(preview).map((step) => (
-          <View key={step}>
-            <Text style={s.heading}>
-              {routineNames[step]} · {formatTime(planSeconds(defaultPlan(step)))}
-            </Text>
-            {showPlan(defaultPlan(step))}
-          </View>
-        ))}
-        <Text style={s.body}>
-          적용하면 기존 시작 운동·저장 루틴을 이 구성으로 바꿉니다. 지난 기록은 유지되며 순서는
-          기록에서 이어집니다. 적용 후 오늘의 운동에서 종목·세트·휴식을 수정할 수 있어요.
-        </Text>
-        <Pressable
-          disabled={active}
-          accessibilityRole="button"
-          onPress={() => onChoose(preview)}
-          style={[s.button, active && { opacity: 0.4 }]}
-        >
-          <Text style={s.name}>
-            {active ? '진행 중인 운동을 마친 뒤 변경 가능' : '이 루틴으로 운동하기 →'}
-          </Text>
-        </Pressable>
-      </View>
       <Text style={s.body}>
         큰 근육군을 고르게 훈련하고 꾸준히 이어가는 원칙을 참고한 FitIn 기본안입니다. 개인별
         회복·훈련량을 계산한 처방은 아니며, 40분 이내에서 조절해요.
@@ -245,6 +333,7 @@ export function RoutinePlanner({
 }
 const s = StyleSheet.create({
   page: { paddingTop: 28, gap: 18 },
+  day: { minWidth: 72, padding: 12, gap: 8, borderRadius: 12, backgroundColor: '#E4EEE8' },
   title: { fontSize: 26, fontWeight: '800', color: '#17343A' },
   card: { backgroundColor: 'white', borderRadius: 20, padding: 22, gap: 12 },
   heading: { fontSize: 16, fontWeight: '700', color: '#244348' },
