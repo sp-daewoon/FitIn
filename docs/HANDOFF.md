@@ -9,6 +9,23 @@
 - Validation: `npm run check` passed TypeScript, 63 tests and harness checks. Web export passed. Browser geometry checks passed 24 language/width/exercise combinations for automatic transitions, explicit set completion/rest skip and pause/resume. `npm run test:rls` passed cross-user/anonymous denial, revision conflict and account deletion cascade in isolated Postgres 16 with mocked Auth identity; hosted Supabase/OAuth is unverified. No native build or device verification in this follow-up.
 - Earlier launch-preparation work still pending: complete copy audit, AdSense/AdMob integration, feedback/update services, final production identity, privacy/support pages and store preparation. Apple enrollment/domain/provider configuration are not yet supplied. Do not submit or publicly deploy; the user requested preparation first.
 
+## 2026-09-14 accounts working end to end
+
+Social-only sign-in works on a real device against the Seoul development project. Verified in the database after a real sign-in: one user, one mirrored account row recording `google` as the signup provider with the display name captured, one identity, and a workout backup row, so sync runs. Attaching a second provider to that account is still refused with `FITIN_USE_EXISTING_PROVIDER`, which is the rule this design exists for.
+
+Email sign-in is gone from the product; accounts are created only by a social provider. Identity linking went with it, so every account has exactly one way in and account merging cannot occur. Google sign-in on iOS opens the native account picker rather than a browser, so no backend hostname is shown to the user.
+
+Getting there surfaced defects worth remembering, because each one presented as a different problem than it was:
+
+- Native modules added as JavaScript dependencies without regenerating the native project killed the app at launch. Every native addition needs prebuild and pods.
+- Xcode re-runs `app.config.js` in its own build phases without the project environment, so builds from the IDE shipped with an empty backend and looked exactly like unconfigured providers. The resolved environment is now cached for those phases; production still cannot use it.
+- `CODE_SIGNING_ALLOWED=NO` simulator builds have no entitlements, so the keychain refuses and a stored session looks like a network failure. Do not use that flag.
+- The app collapsed every backend error into one sentence, which hid the actual cause through several of these. Errors now carry their message and code.
+- Signup triggers assumed an ordering between the rows the auth service writes. They no longer do; all four orderings were re-tested.
+- Google's iOS SDK puts a nonce in its token that the sign-in library will not expose, so nonce checking is disabled for the Google provider only. Apple still passes its own.
+
+Unproven: Apple sign-in is absent from development builds by choice, since a personal Apple team cannot provision it. Nothing is verified on Android, on the web build, or against a production project, which does not exist yet. Advertising is not integrated and its two open decisions are still open.
+
 ## Implemented state
 
 Private repository: `sp-daewoon/FitIn`, main. Source/web remain development 0.0.2; `v0.0.1` and `web/v0.0.1` are immutable historical previews. PPL/catalog expansion was already part of the 0.0.1 baseline; the former handoff incorrectly described it as post-baseline. Claude's persistent builder is commit `124c598`; the current changes build on it without discarding saved templates.
