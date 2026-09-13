@@ -7,13 +7,15 @@ export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 npm ci
 FITIN_PLATFORM=ios npx expo prebuild --platform ios --no-install
 pod install --project-directory=ios
-xcodebuild -workspace ios/FitIn.xcworkspace -scheme FitIn -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath .expo/ios-build CODE_SIGNING_ALLOWED=NO build
+xcodebuild -workspace ios/FitInDev.xcworkspace -scheme FitInDev -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath .expo/ios-build build
 xcrun simctl list devices available
 # Boot a listed iPhone UDID, then:
-xcrun simctl install booted .expo/ios-build/Build/Products/Release-iphonesimulator/FitIn.app
-xcrun simctl launch booted com.spdaewoon.fitin
+xcrun simctl install booted .expo/ios-build/Build/Products/Release-iphonesimulator/FitInDev.app
+xcrun simctl launch booted com.spong.fitin.dev
 open -a Simulator
 ```
+
+**시뮬레이터 빌드에 `CODE_SIGNING_ALLOWED=NO`를 쓰지 말 것.** 엔타이틀먼트가 하나도 없는 앱이 나오고, 그러면 키체인 접근이 `ERR_KEY_CHAIN`으로 거부된다. 인증 세션을 보안 저장소에 넣기 때문에 로그인 화면에 "요청을 완료하지 못했어요"가 뜨고, 원인이 백엔드나 제공자 설정처럼 보인다. 실제로는 서명이 없어서 생긴 문제이며 실기기 빌드에는 해당하지 않는다. 서명을 켜고 빌드하면 시뮬레이터에서도 정상 동작한다.
 
 Run prebuild and CocoaPods sequentially. Prebuild may recreate the native directory; never run it during pod install or a build. The Release configuration embeds JS/assets and does not require Metro. `ios/.xcode.env.local` contains the generated Node executable path; regenerate it via pod install if that runtime disappears.
 
