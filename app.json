@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.spdaewoon.fitin"
+      "bundleIdentifier": "com.fitin.app.dev"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.spdaewoon.fitin"
+      "package": "com.fitin.app.dev"
     },
     "web": {
       "favicon": "./assets/favicon.png"

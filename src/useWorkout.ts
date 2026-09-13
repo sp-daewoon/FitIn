@@ -1,4 +1,6 @@
 import { t } from './i18n';
+import { getLanguage } from './i18n';
+import * as Crypto from 'expo-crypto';
 import { Language, setLanguage } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
@@ -23,7 +25,8 @@ import {
 import { loadData, save } from './storage';
 import { beepCue, speakCue, stopCues } from './audio';
 import { requestReminders, syncReminders } from './notifications';
-export function useWorkout() {
+export function useWorkout(owner = 'guest') {
+  const [persistedData, setPersistedData] = useState<Data | null>(null);
   const [data, setData] = useState<Data>(emptyData),
     [ready, setReady] = useState(false),
     [error, setError] = useState(''),
@@ -36,9 +39,9 @@ export function useWorkout() {
     commandNumber = useRef(0),
     active = useRef(true);
   useEffect(() => {
-    loadData()
+    loadData(owner)
       .then(({ data, legacy }) => {
-        setLanguage(data.preferences.language ?? 'en');
+        setLanguage(data.preferences.language ?? getLanguage());
         // Cold start only: a backgrounded app never reaches this. If a session was left running
         // while the process was dead, freeze the gap out and let the user say what happened.
         const time = Date.now();
@@ -58,8 +61,8 @@ export function useWorkout() {
   }, []);
   useEffect(() => {
     if (!ready) return;
-    void save(data)
-      .then(() => setSaveFailed(false))
+    void save(data, owner)
+      .then(() => { setSaveFailed(false); setPersistedData(data); })
       .catch(() => {
         setSaveFailed(true);
         setError(t('저장에 실패했어요. 앱을 닫기 전에 저장을 다시 시도해주세요.'));
@@ -150,7 +153,7 @@ export function useWorkout() {
     try {
       const time = Date.now();
       setNow(time);
-      setData((d) => (d.session ? d : { ...d, session: begin(routine, items, time) }));
+      setData((d) => (d.session ? d : { ...d, session: begin(routine, items, time, Crypto.randomUUID()) }));
     } catch (e) {
       setError(e instanceof Error ? e.message : t('운동을 시작하지 못했어요.'));
     } finally {
@@ -191,6 +194,7 @@ export function useWorkout() {
     setData((d) => finish(d, Date.now(), 'stopped'));
   }
   return {
+    persistedData,
     changeLanguage: (language: Language) => {
       setLanguage(language);
       void stopCues().catch(() => {});
@@ -213,9 +217,10 @@ export function useWorkout() {
     reorder,
     stop,
     retry: () =>
-      save(data)
+      save(data, owner)
         .then(() => {
           setSaveFailed(false);
+          setPersistedData(data);
           setError('');
         })
         .catch(() => setError(t('저장에 실패했어요. 기기 저장 공간을 확인해주세요.'))),
