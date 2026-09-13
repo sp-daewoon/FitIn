@@ -83,6 +83,12 @@ export async function socialSignIn(provider: 'apple' | 'google') {
   // the device, so no browser appears and the Supabase subdomain is never shown to the user. The
   // browser flow below stays as the fallback for web and for builds without a client id.
   if (provider === 'google' && Platform.OS === 'ios' && google.iosClientId) {
+    // No nonce is passed on purpose. Google's iOS SDK puts one inside the id token and this
+    // library exposes no way to supply or read it, so sending one would fail every sign-in with
+    // "Passed nonce and nonce in id_token should either both exist or not". The Google provider
+    // therefore has nonce checking disabled in the backend; Apple below still passes its own.
+    // Signature, issuer, audience and expiry are still verified, and the token never travels
+    // through a browser redirect. Do not "fix" this by adding a nonce here.
     GoogleSignin.configure({ iosClientId: google.iosClientId });
     const result = await GoogleSignin.signIn();
     if (result.type !== 'success') throw new Error(a('cancelled'));
