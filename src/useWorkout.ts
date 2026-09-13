@@ -1,3 +1,5 @@
+import { t } from './i18n';
+import { Language, setLanguage } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import {
@@ -36,6 +38,7 @@ export function useWorkout() {
   useEffect(() => {
     loadData()
       .then(({ data, legacy }) => {
+        setLanguage(data.preferences.language ?? 'en');
         // Cold start only: a backgrounded app never reaches this. If a session was left running
         // while the process was dead, freeze the gap out and let the user say what happened.
         const time = Date.now();
@@ -46,10 +49,12 @@ export function useWorkout() {
         setReady(true);
         if (legacy)
           setError(
-            '이전 기획 초안 기록은 fitin.v1에 보존돼 있어요. 새 진행 규칙은 별도 저장소를 사용합니다.',
+            t(
+              '이전 기획 초안 기록은 fitin.v1에 보존돼 있어요. 새 진행 규칙은 별도 저장소를 사용합니다.',
+            ),
           );
       })
-      .catch(() => setError('저장 기록을 읽지 못했어요. 원본 보호를 위해 저장을 중단했습니다.'));
+      .catch(() => setError(t('저장 기록을 읽지 못했어요. 원본 보호를 위해 저장을 중단했습니다.')));
   }, []);
   useEffect(() => {
     if (!ready) return;
@@ -57,7 +62,7 @@ export function useWorkout() {
       .then(() => setSaveFailed(false))
       .catch(() => {
         setSaveFailed(true);
-        setError('저장에 실패했어요. 앱을 닫기 전에 저장을 다시 시도해주세요.');
+        setError(t('저장에 실패했어요. 앱을 닫기 전에 저장을 다시 시도해주세요.'));
       });
   }, [data, ready]);
   useEffect(() => {
@@ -97,9 +102,9 @@ export function useWorkout() {
   useEffect(() => {
     if (ready)
       void syncReminders(data.session, data.sound).catch(() =>
-        setError('화면 밖 알림을 예약하지 못했어요. 앱을 열어두고 진행해주세요.'),
+        setError(t('화면 밖 알림을 예약하지 못했어요. 앱을 열어두고 진행해주세요.')),
       );
-  }, [data.session, data.sound, ready]);
+  }, [data.session, data.sound, data.preferences.language, ready]);
   const p = data.session ? position(data.session, now) : null;
   useEffect(() => {
     const s = data.session;
@@ -114,34 +119,40 @@ export function useWorkout() {
       return;
     }
     if (!active.current) return;
-    const key = `${s.id}:${p.phase.id}`;
+    const key = `${s.id}:${p.phase.id}:${data.preferences.language ?? 'en'}`;
     if (cue.current !== key) {
       cue.current = key;
       void speakCue(announcement(p.phase)).catch(() =>
-        setError('음성 재생에 실패했어요. 화면 안내를 확인해주세요.'),
+        setError(t('음성 재생에 실패했어요. 화면 안내를 확인해주세요.')),
       );
     }
     const next = countdownCue(s, now);
     if (next && beep.current !== next.key) {
       beep.current = next.key;
-      void beepCue().catch(() => setError('비프 재생에 실패했어요. 화면 안내는 계속됩니다.'));
+      void beepCue().catch(() => setError(t('비프 재생에 실패했어요. 화면 안내는 계속됩니다.')));
     }
-  }, [data.session, data.sound, p?.phase?.id, Math.ceil(p?.remaining ?? 0)]);
+  }, [
+    data.session,
+    data.sound,
+    data.preferences.language,
+    p?.phase?.id,
+    Math.ceil(p?.remaining ?? 0),
+  ]);
   async function start(routine: Routine, items: PlanItem[]) {
     if (busy || data.session) return;
     setBusy(true);
     try {
       if (Platform.OS !== 'web' && !(await requestReminders()))
-        setError('알림이 꺼져 있어요. 화면 밖 안내를 받으려면 설정에서 알림을 켜주세요.');
+        setError(t('알림이 꺼져 있어요. 화면 밖 안내를 받으려면 설정에서 알림을 켜주세요.'));
     } catch {
-      setError('알림 권한을 확인하지 못했어요. 앱을 열어두고 진행해주세요.');
+      setError(t('알림 권한을 확인하지 못했어요. 앱을 열어두고 진행해주세요.'));
     }
     try {
       const time = Date.now();
       setNow(time);
       setData((d) => (d.session ? d : { ...d, session: begin(routine, items, time) }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : '운동을 시작하지 못했어요.');
+      setError(e instanceof Error ? e.message : t('운동을 시작하지 못했어요.'));
     } finally {
       setBusy(false);
     }
@@ -180,6 +191,12 @@ export function useWorkout() {
     setData((d) => finish(d, Date.now(), 'stopped'));
   }
   return {
+    changeLanguage: (language: Language) => {
+      setLanguage(language);
+      void stopCues().catch(() => {});
+      setError('');
+      setData((d) => ({ ...d, preferences: { ...d.preferences, language } }));
+    },
     data,
     setData,
     ready,
@@ -201,6 +218,6 @@ export function useWorkout() {
           setSaveFailed(false);
           setError('');
         })
-        .catch(() => setError('저장에 실패했어요. 기기 저장 공간을 확인해주세요.')),
+        .catch(() => setError(t('저장에 실패했어요. 기기 저장 공간을 확인해주세요.'))),
   };
 }

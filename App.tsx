@@ -1,3 +1,4 @@
+import { t, localeTag } from './src/i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
@@ -18,6 +19,7 @@ import { ExerciseVisual } from './src/ExerciseVisual';
 import { ExerciseLibrary } from './src/ExerciseLibrary';
 import { RoutinePlanner } from './src/RoutinePlanner';
 import { WatchPreview } from './src/WatchPreview';
+import { SelectField } from './src/SelectField';
 import versions from './docs/releases/versions.json';
 import { exerciseVideos, videoSearch } from './src/videos';
 import { repetitionGuide } from './src/programGuidance';
@@ -51,12 +53,15 @@ function Button({
   onPress,
   secondary = false,
   disabled = false,
+  stableLabel = false,
 }: {
   label: string;
   onPress: () => void;
   secondary?: boolean;
   disabled?: boolean;
+  stableLabel?: boolean;
 }) {
+  const { fontScale } = useWindowDimensions();
   return (
     <Pressable
       accessibilityRole="button"
@@ -69,7 +74,15 @@ function Button({
         (disabled || pressed) && { opacity: 0.45 },
       ]}
     >
-      <Text style={[s.buttonLabel, secondary && { color: '#244348' }]}>{label}</Text>
+      <Text
+        style={[
+          s.buttonLabel,
+          stableLabel && { minHeight: 36 * fontScale, lineHeight: 18, textAlign: 'center' },
+          secondary && { color: '#244348' },
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -90,7 +103,8 @@ function FitIn() {
     [stopConfirm, setStopConfirm] = useState(false),
     [removing, setRemoving] = useState<null | { id: string; label: string } | 'all'>(null),
     [notice, setNotice] = useState('');
-  const wide = useWindowDimensions().width >= 900;
+  const { width, fontScale } = useWindowDimensions();
+  const wide = width >= 900;
   const page = useRef<ScrollView>(null);
   const session = data.session;
   const routine = nextRoutine(data.history, data.preferences.split, data.preferences.customCycle);
@@ -161,7 +175,7 @@ function FitIn() {
         templates: { ...d.preferences.templates, [target]: plan },
       },
     }));
-    setNotice(`${routineNames[target]} 기본 루틴을 저장했어요. 다음 체크인부터 적용됩니다.`);
+    setNotice(t('{0} 기본 루틴을 저장했어요. 다음 체크인부터 적용됩니다.', routineNames[target]));
   }
   function resetTemplate(target: Routine) {
     w.setData((d) => {
@@ -169,7 +183,7 @@ function FitIn() {
       delete templates[target];
       return { ...d, preferences: { ...d.preferences, templates } };
     });
-    setNotice(`${routineNames[target]} 기본 루틴을 기본 구성으로 되돌렸어요.`);
+    setNotice(t('{0} 기본 루틴을 기본 구성으로 되돌렸어요.', routineNames[target]));
   }
   function savePlan() {
     if (planError) return;
@@ -195,14 +209,18 @@ function FitIn() {
     // Stay here and return to the top. The next thing to do is check the new visit order and edit
     // each visit in the builder, not check in.
     page.current?.scrollTo({ y: 0, animated: true });
-    setNotice('선택한 루틴을 적용했어요. 위 내 기본 루틴에서 방문별 구성을 확인하고 저장하세요.');
+    setNotice(
+      t('선택한 루틴을 적용했어요. 위 내 기본 루틴에서 방문별 구성을 확인하고 저장하세요.'),
+    );
   }
   function openExternal(url: string) {
     if (session && !session.paused) w.command('pause');
     void Linking.openURL(url).catch(() => {
       setGuide(null);
       setNotice(
-        '링크를 열지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요. 진행 중이던 운동은 재개 버튼을 눌러 이어가세요.',
+        t(
+          '링크를 열지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요. 진행 중이던 운동은 재개 버튼을 눌러 이어가세요.',
+        ),
       );
     });
   }
@@ -217,8 +235,11 @@ function FitIn() {
       }));
       setNotice(
         proposal.replaced.length
-          ? `${proposal.replaced.map((id) => machines[id].name).join(' · ')} 대신 선택한 시작 운동을 넣었어요. 부위 구성을 확인해주세요.`
-          : '선택한 운동을 앞쪽에 배치했어요.',
+          ? t(
+              '{0} 대신 선택한 시작 운동을 넣었어요. 부위 구성을 확인해주세요.',
+              proposal.replaced.map((id) => machines[id].name).join(' · '),
+            )
+          : t('선택한 운동을 앞쪽에 배치했어요.'),
       );
       setPersonal(false);
     } catch (e) {
@@ -236,21 +257,18 @@ function FitIn() {
       <ExerciseVisual machine={machine} />
       <View style={s.muscleLegend}>
         <View style={s.coralDot} />
-        <Text style={s.muscleText}>주요 자극 {m.area}</Text>
+        <Text style={s.muscleText}>{t('주요 자극 {0}', m.area)}</Text>
       </View>
-      <Text style={s.support}>함께 쓰는 부위 {m.secondary}</Text>
+      <Text style={s.support}>{t('함께 쓰는 부위 {0}', m.secondary)}</Text>
       <Text style={s.support}>
-        세트당 {repetitionGuide(machine)} 시작 범위 · 자세를 유지할 수 있는 무게
+        {t('세트당 {0} 시작 범위 · 자세를 유지할 수 있는 무게', repetitionGuide(machine))}
       </Text>
       <View style={s.line} />
-      <Text style={s.coachingLabel}>이 동작에서 하나만 기억해요</Text>
+      <Text style={s.coachingLabel}>{t('이 동작에서 하나만 기억해요')}</Text>
       <Text style={s.cue}>{m.cue}</Text>
       <Pressable accessibilityRole="button" onPress={() => setGuide(machine)} style={s.linkButton}>
-        <Text style={s.link}>기구 설정과 자세 확인 ↗</Text>
+        <Text style={s.link}>{t('기구 설정과 자세 확인 ↗')}</Text>
       </Pressable>
-      <Text style={s.assetNote}>
-        개발용 생성 일러스트 · 자세 검수 전 · 실제 기구와 차이가 있어요
-      </Text>
     </View>
   );
   return (
@@ -261,28 +279,40 @@ function FitIn() {
           <Text style={s.logo}>
             fit<Text style={{ color: '#E97860' }}>in.</Text>
           </Text>
-          <View style={s.headerRight}>
-            <View style={s.dot} />
-            <Text style={s.small}>내 기기에만 저장</Text>
-            <Text style={s.buildTag}>
-              {
-                versions[
-                  Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web'
-                ].version
-              }{' '}
-              · PREVIEW
-            </Text>
-          </View>
+          {__DEV__ && (
+            <View style={s.headerRight}>
+              <View style={s.dot} />
+              <Text style={s.small}>{t('내 기기에만 저장')}</Text>
+              <Text style={s.buildTag}>
+                {
+                  versions[
+                    Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web'
+                  ].version
+                }{' '}
+                · PREVIEW
+              </Text>
+            </View>
+          )}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('설정')}
+            onPress={() => {
+              setTab('settings');
+              page.current?.scrollTo({ y: 0 });
+            }}
+            style={s.close}
+          >
+            <Text style={s.section}>⚙</Text>
+          </Pressable>
         </View>
         <View style={s.nav}>
           {(
             [
-              ['today', '오늘의 운동'],
-              ['plan', '내 루틴'],
-              ['library', '운동 사전'],
-              ['history', '운동 기록'],
-              ['settings', '나의 방식'],
-              ...(__DEV__ ? [['harness', '하네스']] : []),
+              ['today', t('오늘의 운동')],
+              ['plan', t('내 루틴')],
+              ['library', t('운동 사전')],
+              ['history', t('운동 기록')],
+              ...(__DEV__ ? [['harness', t('하네스')]] : []),
             ] as [typeof tab, string][]
           ).map(([value, label]) => (
             <Pressable
@@ -300,36 +330,36 @@ function FitIn() {
           <View style={s.warning}>
             <Text style={s.body}>{w.error}</Text>
             {w.saveFailed && (
-              <Button secondary label="저장 다시 시도" onPress={() => void w.retry()} />
+              <Button secondary label={t('저장 다시 시도')} onPress={() => void w.retry()} />
             )}
           </View>
         ) : null}
         {!w.ready ? (
-          <Text style={s.title}>기록을 불러오고 있어요.</Text>
+          <Text style={s.title}>{t('기록을 불러오고 있어요.')}</Text>
         ) : (
           <>
             {w.interrupted > 0 && session ? (
               <View style={s.warning}>
                 <Text style={s.section}>
-                  앱이 종료된 사이 {formatTime(w.interrupted)}이 지났어요.
+                  {t('앱이 종료된 사이 {0}이 지났어요.', formatTime(w.interrupted))}
                 </Text>
                 <Text style={s.body}>
-                  그동안 앱이 시간을 재고 있지 않아서 운동 시간에 넣지 않았습니다. 운동은 일시정지
-                  상태이고 완료한 세트 기록은 그대로예요. 화면만 꺼두었을 때는 시간이 계속 흐르며,
-                  이 물음은 앱이 완전히 종료됐을 때만 나옵니다.
+                  {t(
+                    '그동안 앱이 시간을 재고 있지 않아서 운동 시간에 넣지 않았습니다. 운동은 일시정지 상태이고 완료한 세트 기록은 그대로예요. 화면만 꺼두었을 때는 시간이 계속 흐르며, 이 물음은 앱이 완전히 종료됐을 때만 나옵니다.',
+                  )}
                 </Text>
                 <Button
-                  label="앱만 꺼졌고 운동은 계속했어요 · 시간 인정하고 이어서"
+                  label={t('앱만 꺼졌고 운동은 계속했어요 · 시간 인정하고 이어서')}
                   onPress={() => w.resolveGap(true)}
                 />
                 <Button
                   secondary
-                  label="쉬고 있었어요 · 그 시간은 빼고 이어서"
+                  label={t('쉬고 있었어요 · 그 시간은 빼고 이어서')}
                   onPress={() => w.resolveGap(false)}
                 />
                 <Button
                   secondary
-                  label="여기까지 기록하고 끝내기"
+                  label={t('여기까지 기록하고 끝내기')}
                   onPress={() => setStopConfirm(true)}
                 />
               </View>
@@ -339,7 +369,7 @@ function FitIn() {
                 <Text style={[s.body, { flex: 1 }]}>{notice}</Text>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="안내 닫기"
+                  accessibilityLabel={t('안내 닫기')}
                   onPress={() => setNotice('')}
                   style={s.close}
                 >
@@ -350,24 +380,19 @@ function FitIn() {
             {tab === 'today' && (
               <>
                 <View style={s.intro}>
-                  <Text style={s.overline}>
-                    {session ? 'FOCUS ON THE MOVEMENT' : 'YOUR TRAINING SESSION'}
-                  </Text>
-                  <Text style={s.title}>
+                  <Text
+                    testID="session-heading"
+                    style={[s.title, session && { minHeight: 84 * fontScale }]}
+                  >
                     {session
                       ? p?.phase?.kind === 'rest'
-                        ? '다음 세트를 준비해요.'
+                        ? t('다음 세트를 준비해요.')
                         : p?.phase?.kind === 'move'
-                          ? '다음 기구로 이동해요.'
+                          ? t('다음 기구로 이동해요.')
                           : p?.phase?.kind === 'prepare'
-                            ? '자세를 잡아주세요.'
+                            ? t('자세를 잡아주세요.')
                             : m.name
-                      : '운동에만 집중하세요.'}
-                  </Text>
-                  <Text style={s.subtitle}>
-                    {session
-                      ? '동작은 크게, 안내는 간결하게. 내 페이스로 이어가요.'
-                      : '몸풀기는 끝내고 오세요. 체크인 후 10초면 시작합니다.'}
+                      : t('운동에만 집중하세요.')}
                   </Text>
                 </View>
                 <View style={wide ? s.columns : s.stacked}>
@@ -375,7 +400,6 @@ function FitIn() {
                     {!session && (
                       <View style={s.between}>
                         <Text style={s.section}>{m.name}</Text>
-                        <Text style={s.small}>기구를 선택해 미리 볼 수 있어요</Text>
                       </View>
                     )}
                     {visual}
@@ -383,30 +407,35 @@ function FitIn() {
                   <View style={wide ? s.sideColumn : undefined}>
                     {session && p ? (
                       <>
-                        <View style={s.controlCard}>
+                        <View testID="session-controls" style={s.controlCard}>
                           <View style={s.between}>
                             <Text style={s.overline}>
                               {session.paused ? 'PAUSED' : 'GUIDED SESSION'}
                             </Text>
-                            <Text style={s.liveBadge}>
+                            <Text
+                              style={[
+                                s.liveBadge,
+                                { minHeight: 40 * fontScale, lineHeight: 14, flexShrink: 1 },
+                              ]}
+                            >
                               {p.phase?.kind === 'work'
-                                ? `${p.phase.set} / ${p.phase.sets}세트`
+                                ? t('{0} / {1}세트', p.phase.set, p.phase.sets)
                                 : p.phase?.kind === 'rest'
-                                  ? '휴식'
+                                  ? t('휴식')
                                   : p.phase?.kind === 'move'
-                                    ? '정리 · 이동'
-                                    : '10초 준비'}
+                                    ? t('정리 · 이동')
+                                    : t('10초 준비')}
                             </Text>
                           </View>
                           <Text style={s.controlTitle}>{m.name}</Text>
                           <View style={s.clockRow}>
                             <Text style={s.phaseClock}>{formatTime(p.remaining)}</Text>
-                            <Text style={s.small}>
+                            <Text style={[s.small, { flex: 1, minHeight: 36 * fontScale }]}>
                               {p.phase?.kind === 'work'
-                                ? '이번 세트 남은 시간'
+                                ? t('이번 세트 남은 시간')
                                 : p.phase?.kind === 'rest'
-                                  ? '휴식 남은 시간'
-                                  : '시작까지'}
+                                  ? t('휴식 남은 시간')
+                                  : t('시작까지')}
                             </Text>
                           </View>
                           <View style={s.track}>
@@ -418,52 +447,56 @@ function FitIn() {
                             />
                           </View>
                           <View style={s.between}>
-                            <Text style={s.small}>전체 {formatTime(p.elapsed)}</Text>
-                            <Text style={s.small}>예상 남음 {formatTime(remaining)}</Text>
+                            <Text style={s.small}>{t('전체 {0}', formatTime(p.elapsed))}</Text>
+                            <Text style={s.small}>{t('예상 남음 {0}', formatTime(remaining))}</Text>
                           </View>
                           <View style={{ marginTop: 22 }}>
                             <Button
+                              stableLabel
                               disabled={session.paused || p.phase?.kind === 'prepare'}
                               label={
                                 p.phase?.kind === 'work'
-                                  ? '✓  세트 완료 · 다음 단계'
+                                  ? t('✓  세트 완료 · 다음 단계')
                                   : p.phase?.kind === 'rest'
-                                    ? '▶  준비됐어요 · 다음 세트'
+                                    ? t('▶  준비됐어요 · 다음 세트')
                                     : p.phase?.kind === 'move'
-                                      ? '▶  준비 완료 · 운동 시작'
-                                      : '10초 후 자동으로 시작'
+                                      ? t('▶  준비 완료 · 운동 시작')
+                                      : t('10초 후 자동으로 시작')
                               }
                               onPress={() => w.command('next')}
                             />
                             <View style={s.actionRow}>
                               <View style={{ flex: 1 }}>
                                 <Button
+                                  stableLabel
                                   secondary
                                   disabled={
                                     session.paused ||
                                     p.phase?.kind === 'prepare' ||
                                     remaining <= p.remaining
                                   }
-                                  label="+30초 더"
+                                  label={t('+30초 더')}
                                   onPress={() => w.command('extend')}
                                 />
                               </View>
                               <View style={{ flex: 1 }}>
                                 <Button
+                                  stableLabel
                                   secondary
-                                  label={session.paused ? '▶ 재개' : 'Ⅱ 일시정지'}
+                                  label={session.paused ? t('▶ 재개') : t('Ⅱ 일시정지')}
                                   onPress={() => w.command(session.paused ? 'resume' : 'pause')}
                                 />
                               </View>
                             </View>
                           </View>
                           <Text style={s.helper}>
-                            자동으로 이어지지만 준비되면 바로 넘어갈 수 있어요. 완료 버튼을 누른
-                            세트만 수행으로 기록합니다.
+                            {t(
+                              '자동으로 이어지지만 준비되면 바로 넘어갈 수 있어요. 완료 버튼을 누른 세트만 수행으로 기록합니다.',
+                            )}
                           </Text>
                         </View>
                         <View style={s.card}>
-                          <Text style={s.section}>다음 순서</Text>
+                          <Text style={s.section}>{t('다음 순서')}</Text>
                           {upcoming.length ? (
                             upcoming.map((x, i) => (
                               <View key={x.id} style={s.queueRow}>
@@ -474,24 +507,27 @@ function FitIn() {
                                 {i < upcoming.length - 1 && (
                                   <Pressable
                                     accessibilityRole="button"
-                                    accessibilityLabel={`${machines[x.machine].name} 다음 기구와 순서 교체`}
+                                    accessibilityLabel={t(
+                                      '{0} 다음 기구와 순서 교체',
+                                      machines[x.machine].name,
+                                    )}
                                     onPress={() => w.reorder(x.machine, upcoming[i + 1].machine)}
                                     style={s.miniButton}
                                   >
-                                    <Text style={s.small}>⇅ 교체</Text>
+                                    <Text style={s.small}>{t('⇅ 교체')}</Text>
                                   </Pressable>
                                 )}
                               </View>
                             ))
                           ) : (
                             <Text style={s.helper}>
-                              마지막 운동이에요. 세트가 끝나면 기록을 확인해요.
+                              {t('마지막 운동이에요. 세트가 끝나면 기록을 확인해요.')}
                             </Text>
                           )}
                         </View>
                         <Button
                           secondary
-                          label="오늘은 여기까지"
+                          label={t('오늘은 여기까지')}
                           onPress={() => setStopConfirm(true)}
                         />
                       </>
@@ -501,92 +537,97 @@ function FitIn() {
                           <View style={s.between}>
                             <Text style={s.overline}>TODAY’S ROUTINE</Text>
                             <Text style={s.liveBadge}>
-                              {items.every((x) => machines[x.machine].equipment === '머신')
-                                ? '머신 중심'
-                                : '맞춤 구성'}
+                              {items.every((x) => machines[x.machine].equipment === t('머신'))
+                                ? t('머신 중심')
+                                : t('맞춤 구성')}
                             </Text>
                           </View>
                           <Text style={s.controlTitle}>{routineNames[routine]}</Text>
                           <Text style={s.body}>
-                            무엇을 할지 고민하지 않도록.{'\n'}기구·세트·휴식·이동을 함께 안내해요.
+                            {t(
+                              '무엇을 할지 고민하지 않도록.{0}기구·세트·휴식·이동을 함께 안내해요.',
+                              '\n',
+                            )}
                           </Text>
                           <Button
                             secondary
-                            label="루틴 고르기 · 지난 운동과 다음 일정 보기 →"
+                            label={t('루틴 고르기 · 지난 운동과 다음 일정 보기 →')}
                             onPress={() => setTab('plan')}
                           />
                           <View style={s.summaryRow}>
                             <View>
                               <Text style={s.summaryNumber}>
                                 {Math.round(parts.work / 60)}
-                                <Text style={s.summaryUnit}> 분 운동 구간</Text>
+                                <Text style={s.summaryUnit}>{t('분 운동 구간')}</Text>
                               </Text>
-                              <Text style={s.small}>휴식·이동 제외한 계획 시간</Text>
+                              <Text style={s.small}>{t('휴식·이동 제외한 계획 시간')}</Text>
                             </View>
                             <View style={s.summaryDivider} />
                             <View>
                               <Text style={s.summaryNumber}>
                                 {items.length}
-                                <Text style={s.summaryUnit}> 운동</Text>
+                                <Text style={s.summaryUnit}>{t('운동')}</Text>
                               </Text>
-                              <Text style={s.small}>내 방식으로 변경 가능</Text>
+                              <Text style={s.small}>{t('내 방식으로 변경 가능')}</Text>
                             </View>
                           </View>
                           <View style={s.budget}>
                             <View style={s.between}>
-                              <Text style={s.small}>운동 시간</Text>
+                              <Text style={s.small}>{t('운동 시간')}</Text>
                               <Text style={s.budgetValue}>{formatTime(parts.work)}</Text>
                             </View>
                             <View style={s.between}>
-                              <Text style={s.small}>휴식 시간</Text>
+                              <Text style={s.small}>{t('휴식 시간')}</Text>
                               <Text style={s.budgetValue}>{formatTime(parts.rest)}</Text>
                             </View>
                             <View style={s.between}>
-                              <Text style={s.small}>기구 이동·준비</Text>
+                              <Text style={s.small}>{t('기구 이동·준비')}</Text>
                               <Text style={s.budgetValue}>
                                 {formatTime(parts.move + parts.setup)}
                               </Text>
                             </View>
                             <View style={s.between}>
-                              <Text style={s.small}>합계</Text>
+                              <Text style={s.small}>{t('합계')}</Text>
                               <Text style={s.budgetValue}>{formatTime(total)}</Text>
                             </View>
                             <View style={s.between}>
-                              <Text style={s.small}>운동 구간 목표 25분</Text>
+                              <Text style={s.small}>{t('운동 구간 목표 25분')}</Text>
                               <Text style={s.budgetValue}>
                                 {parts.work >= 1500
-                                  ? '목표 충족'
-                                  : formatTime(1500 - parts.work) + ' 부족'}
+                                  ? t('목표 충족')
+                                  : formatTime(1500 - parts.work) + t(' 부족')}
                               </Text>
                             </View>
                           </View>
                           {planError ? <Text style={s.limit}>{planError}</Text> : null}
                           <Button
                             disabled={w.busy || !!planError}
-                            label={w.busy ? '준비 중…' : '체크인하고 전체 루틴 시작 →'}
+                            label={w.busy ? t('준비 중…') : t('체크인하고 전체 루틴 시작 →')}
                             onPress={() => void w.start(routine, items)}
                           />
 
                           <Text style={s.helper}>
-                            몸풀기를 마친 상태에서 시작해요.{'\n'}“시작하겠습니다” 안내 후 10초
-                            여유를 드려요.
+                            {t(
+                              '몸풀기를 마친 상태에서 시작해요.{0}“시작하겠습니다” 안내 후 10초 여유를 드려요.',
+                              '\n',
+                            )}
                           </Text>
                         </View>
                         <View style={s.card}>
                           <View style={s.between}>
-                            <Text style={s.section}>오늘 한 번 방문해서 할 운동</Text>
+                            <Text style={s.section}>{t('오늘 한 번 방문해서 할 운동')}</Text>
                             <Pressable
                               accessibilityRole="button"
                               onPress={() => setEdit(true)}
                               style={s.linkButton}
                             >
-                              <Text style={s.link}>교체·순서 수정 ↗</Text>
+                              <Text style={s.link}>{t('교체·순서 수정 ↗')}</Text>
                             </Pressable>
                           </View>
                           {items.map((x, i) => (
                             <Pressable
                               accessibilityRole="button"
-                              accessibilityLabel={`${machines[x.machine].name} 미리보기`}
+                              accessibilityLabel={t('{0} 미리보기', machines[x.machine].name)}
                               key={`${i}:${x.machine}`}
                               onPress={() => setSelected(x.machine)}
                               style={[s.queueRow, selected === x.machine && s.selectedRow]}
@@ -595,7 +636,7 @@ function FitIn() {
                               <View style={{ flex: 1 }}>
                                 <Text style={s.rowTitle}>{machines[x.machine].name}</Text>
                                 <Text style={s.small}>
-                                  {x.sets}세트 · 세트당 {x.work}초 · 휴식 {x.rest}초
+                                  {t('{0}세트 · 세트당 {1}초 · 휴식 {2}초', x.sets, x.work, x.rest)}
                                 </Text>
                               </View>
                               <Text style={s.small}>↗</Text>
@@ -604,7 +645,7 @@ function FitIn() {
                         </View>
                         <Button
                           secondary
-                          label="나만의 시작 운동 선택"
+                          label={t('나만의 시작 운동 선택')}
                           onPress={() => {
                             setDraft(data.preferences.starters);
                             setPersonal(true);
@@ -640,8 +681,10 @@ function FitIn() {
               <>
                 <View style={s.intro}>
                   <Text style={s.overline}>YOUR TRAINING JOURNAL</Text>
-                  <Text style={s.title}>한 번의 방문도 기록으로.</Text>
-                  <Text style={s.subtitle}>시간이 지난 세트와 실제 완료한 세트를 구분해요.</Text>
+                  <Text style={s.title}>{t('한 번의 방문도 기록으로.')}</Text>
+                  <Text style={s.subtitle}>
+                    {t('시간이 지난 세트와 실제 완료한 세트를 구분해요.')}
+                  </Text>
                 </View>
                 {data.history.length ? (
                   [...data.history].reverse().map((r) => (
@@ -650,53 +693,60 @@ function FitIn() {
                         <Text style={s.section}>{routineNames[r.routine]}</Text>
                         <Text style={s.liveBadge}>
                           {r.reason === 'stopped'
-                            ? '중간 종료'
+                            ? t('중간 종료')
                             : r.reason === 'budget'
-                              ? '40분 도달'
-                              : '루틴 종료'}
+                              ? t('40분 도달')
+                              : t('루틴 종료')}
                         </Text>
                       </View>
                       <Text style={s.controlTitle}>{formatTime(r.elapsed)}</Text>
                       <Text style={s.body}>
-                        {new Date(r.endedAt).toLocaleString('ko-KR')} · 직접 완료 {r.confirmedSets}
-                        세트
+                        {t(
+                          '{0} · 직접 완료 {1} 세트',
+                          new Date(r.endedAt).toLocaleString(localeTag()),
+                          r.confirmedSets,
+                        )}
                       </Text>
                       <Text style={s.small}>
                         {r.performed.map((id) => machines[id].name).join(' · ') ||
-                          '직접 완료 기록 없음'}
+                          t('직접 완료 기록 없음')}
                       </Text>
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel={`${routineNames[r.routine]} ${new Date(r.endedAt).toLocaleDateString('ko-KR')} 기록 삭제`}
+                        accessibilityLabel={t(
+                          '{0} {1} 기록 삭제',
+                          routineNames[r.routine],
+                          new Date(r.endedAt).toLocaleDateString(localeTag()),
+                        )}
                         onPress={() =>
                           setRemoving({
                             id: r.id,
-                            label: `${new Date(r.endedAt).toLocaleString('ko-KR')} · ${routineNames[r.routine]}`,
+                            label: `${new Date(r.endedAt).toLocaleString(localeTag())} · ${routineNames[r.routine]}`,
                           })
                         }
                         style={s.linkButton}
                       >
-                        <Text style={s.link}>이 기록 삭제</Text>
+                        <Text style={s.link}>{t('이 기록 삭제')}</Text>
                       </Pressable>
                     </View>
                   ))
                 ) : (
                   <View style={s.card}>
-                    <Text style={s.section}>첫 체크인을 기다리고 있어요.</Text>
-                    <Text style={s.subtitle}>다음 방문에도 내 기기에서 이어갑니다.</Text>
+                    <Text style={s.section}>{t('첫 체크인을 기다리고 있어요.')}</Text>
+                    <Text style={s.subtitle}>{t('다음 방문에도 내 기기에서 이어갑니다.')}</Text>
                   </View>
                 )}
                 {data.history.length ? (
                   <View style={s.card}>
-                    <Text style={s.section}>기록 정리</Text>
+                    <Text style={s.section}>{t('기록 정리')}</Text>
                     <Text style={s.helper}>
-                      기록은 이 기기에만 있어서 지우면 되돌릴 수 없어요. 다음 운동 순서는 남은
-                      기록으로 다시 계산하므로 순서가 앞으로 돌아갈 수 있습니다. 저장한 내 루틴과
-                      진행 중인 운동은 지워지지 않아요.
+                      {t(
+                        '기록은 이 기기에만 있어서 지우면 되돌릴 수 없어요. 다음 운동 순서는 남은 기록으로 다시 계산하므로 순서가 앞으로 돌아갈 수 있습니다. 저장한 내 루틴과 진행 중인 운동은 지워지지 않아요.',
+                      )}
                     </Text>
                     <Button
                       secondary
-                      label={`기록 ${data.history.length}개 전체 삭제`}
+                      label={t('기록 {0}개 전체 삭제', data.history.length)}
                       onPress={() => setRemoving('all')}
                     />
                   </View>
@@ -705,65 +755,82 @@ function FitIn() {
             )}
             {tab === 'settings' && (
               <>
+                <SelectField
+                  label={t('언어')}
+                  value={data.preferences.language ?? 'en'}
+                  options={[
+                    { value: 'en', label: 'English' },
+                    { value: 'ko', label: '한국어' },
+                  ]}
+                  onChange={w.changeLanguage}
+                />
+                <Text style={s.helper}>{t('화면·음성·알림에 함께 적용합니다.')}</Text>
                 <View style={s.intro}>
-                  <Text style={s.overline}>BUILT AROUND YOU</Text>
-                  <Text style={s.title}>내 운동 방식에 맞추세요.</Text>
-                  <Text style={s.subtitle}>
-                    기본 추천을 유지하면서 필요한 부분만 바꿀 수 있어요.
-                  </Text>
+                  <Text style={s.title}>{t('설정')}</Text>
                 </View>
                 <View style={s.card}>
                   <Button
                     secondary
-                    label="분할·루틴 설정은 내 루틴에서 →"
+                    label={t('분할·루틴 설정은 내 루틴에서 →')}
                     onPress={() => setTab('plan')}
                   />
-                  <WatchPreview
-                    session={session}
-                    now={w.now}
-                    fallback={machine}
-                    onCommand={w.command}
-                  />
-                  <Text style={s.section}>Apple 건강</Text>
-                  <Text style={s.liveBadge}>iPhone 연동 준비 중 · 현재 미연결</Text>
-                  <Text style={s.helper}>
-                    동의한 경우 완료한 근력 운동을 건강 앱에 저장하고, Apple Watch의 심박수를 함께
-                    확인하는 기능을 준비합니다. 현재 버전은 건강 데이터를 읽거나 저장하지 않아요.
-                    연동 없이도 FitIn을 사용할 수 있습니다.
-                  </Text>
-                  <View style={s.line} />
+                  {__DEV__ && (
+                    <>
+                      <WatchPreview
+                        session={session}
+                        now={w.now}
+                        fallback={machine}
+                        onCommand={w.command}
+                      />
+                      <Text style={s.section}>{t('Apple 건강')}</Text>
+                      <Text style={s.liveBadge}>{t('iPhone 연동 준비 중 · 현재 미연결')}</Text>
+                      <Text style={s.helper}>
+                        {t(
+                          '동의한 경우 완료한 근력 운동을 건강 앱에 저장하고, Apple Watch의 심박수를 함께 확인하는 기능을 준비합니다. 현재 버전은 건강 데이터를 읽거나 저장하지 않아요. 연동 없이도 FitIn을 사용할 수 있습니다.',
+                        )}
+                      </Text>
+                      <View style={s.line} />
+                    </>
+                  )}
                   <View style={s.between}>
                     <View style={{ flex: 1 }}>
-                      <Text style={s.section}>음성 · 5초 비프 안내</Text>
-                      <Text style={s.helper}>운동명과 세트 번호를 읽어줘요.</Text>
+                      <Text style={s.section}>{t('음성 · 5초 비프 안내')}</Text>
+                      <Text style={s.helper}>{t('운동명과 세트 번호를 읽어줘요.')}</Text>
                     </View>
                     <Switch
-                      accessibilityLabel="음성 및 비프 안내"
+                      accessibilityLabel={t('음성 및 비프 안내')}
                       value={data.sound}
                       trackColor={{ true: '#E97860' }}
                       onValueChange={(sound) => w.setData((d) => ({ ...d, sound }))}
                     />
                   </View>
                   <View style={s.line} />
-                  <Text style={s.section}>워치 · AirPods</Text>
-                  <Text style={s.helper}>
-                    워치는 다음 단계·30초 더·일시정지 중심으로 연결할 예정입니다. AirPods 버튼은
-                    음악 앱과의 충돌을 확인해야 하며, 현재 연결 기능은 제공하지 않습니다.
-                  </Text>
+                  {__DEV__ && (
+                    <>
+                      <Text style={s.section}>{t('워치 · AirPods')}</Text>
+                      <Text style={s.helper}>
+                        {t(
+                          '워치는 다음 단계·30초 더·일시정지 중심으로 연결할 예정입니다. AirPods 버튼은 음악 앱과의 충돌을 확인해야 하며, 현재 연결 기능은 제공하지 않습니다.',
+                        )}
+                      </Text>
+                    </>
+                  )}
                   <Button
                     disabled={!!session}
                     secondary
-                    label="개인 시작 운동·이전 고정 설정 해제"
+                    label={t('개인 시작 운동·이전 고정 설정 해제')}
                     onPress={() => {
                       w.setData((d) => ({
                         ...d,
                         preferences: { ...d.preferences, starters: [], savedPlan: null },
                       }));
-                      setNotice('개인 운동 설정을 해제했어요. 기록은 유지됩니다.');
+                      setNotice(t('개인 운동 설정을 해제했어요. 기록은 유지됩니다.'));
                     }}
                   />
                   {session && (
-                    <Text style={s.helper}>진행 중인 운동이 끝난 뒤 설정을 바꿀 수 있어요.</Text>
+                    <Text style={s.helper}>
+                      {t('진행 중인 운동이 끝난 뒤 설정을 바꿀 수 있어요.')}
+                    </Text>
                   )}
                 </View>
               </>
@@ -794,19 +861,19 @@ function FitIn() {
               <Text style={s.section}>
                 {removing
                   ? removing === 'all'
-                    ? '기록을 전부 지울까요?'
-                    : '이 기록을 지울까요?'
+                    ? t('기록을 전부 지울까요?')
+                    : t('이 기록을 지울까요?')
                   : stopConfirm
-                    ? '오늘은 여기까지 할까요?'
+                    ? t('오늘은 여기까지 할까요?')
                     : guide
                       ? machines[guide].name
                       : personal
-                        ? '나만의 시작 운동'
-                        : '오늘의 운동 수정'}
+                        ? t('나만의 시작 운동')
+                        : t('오늘의 운동 수정')}
               </Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="닫기"
+                accessibilityLabel={t('닫기')}
                 onPress={() => {
                   setEdit(false);
                   setPersonal(false);
@@ -826,15 +893,16 @@ function FitIn() {
                 <>
                   <Text style={s.body}>
                     {removing === 'all'
-                      ? `운동 기록 ${data.history.length}개를 이 기기에서 지웁니다.`
-                      : `${removing.label} 기록을 이 기기에서 지웁니다.`}
+                      ? t('운동 기록 {0}개를 이 기기에서 지웁니다.', data.history.length)
+                      : t('{0} 기록을 이 기기에서 지웁니다.', removing.label)}
                   </Text>
                   <Text style={s.helper}>
-                    되돌릴 수 없어요. 다음 운동 순서는 남은 기록으로 다시 계산합니다. 저장한 내
-                    루틴과 진행 중인 운동은 그대로 남습니다.
+                    {t(
+                      '되돌릴 수 없어요. 다음 운동 순서는 남은 기록으로 다시 계산합니다. 저장한 내 루틴과 진행 중인 운동은 그대로 남습니다.',
+                    )}
                   </Text>
                   <Button
-                    label={removing === 'all' ? '전부 삭제' : '삭제'}
+                    label={removing === 'all' ? t('전부 삭제') : t('삭제')}
                     onPress={() => {
                       const target = removing;
                       w.setData((d) =>
@@ -842,17 +910,21 @@ function FitIn() {
                       );
                       setRemoving(null);
                       setNotice(
-                        target === 'all' ? '운동 기록을 모두 지웠어요.' : '선택한 기록을 지웠어요.',
+                        target === 'all'
+                          ? t('운동 기록을 모두 지웠어요.')
+                          : t('선택한 기록을 지웠어요.'),
                       );
                     }}
                   />
-                  <Button secondary label="취소" onPress={() => setRemoving(null)} />
+                  <Button secondary label={t('취소')} onPress={() => setRemoving(null)} />
                 </>
               ) : stopConfirm ? (
                 <>
-                  <Text style={s.body}>현재까지의 시간과 직접 완료한 세트를 저장합니다.</Text>
+                  <Text style={s.body}>
+                    {t('현재까지의 시간과 직접 완료한 세트를 저장합니다.')}
+                  </Text>
                   <Button
-                    label="중간 종료하고 기록"
+                    label={t('중간 종료하고 기록')}
                     onPress={() => {
                       w.stop();
                       setStopConfirm(false);
@@ -863,42 +935,47 @@ function FitIn() {
               ) : guide ? (
                 <>
                   <ExerciseVisual machine={guide} />
-                  <Text style={s.section}>주요 자극 · {machines[guide].area}</Text>
+                  <Text style={s.section}>{t('주요 자극 · {0}', machines[guide].area)}</Text>
                   <Text style={s.cue}>{machines[guide].setup}</Text>
                   <Text style={s.body}>{machines[guide].cue}</Text>
-                  <Text style={s.section}>영상으로 동작 확인</Text>
+                  <Text style={s.section}>{t('영상으로 동작 확인')}</Text>
                   {exerciseVideos[guide] && (
                     <>
                       <Button
                         secondary
-                        label={`▶ ${exerciseVideos[guide]!.title} 보기`}
+                        label={t('▶ {0} 보기', exerciseVideos[guide]!.title)}
                         onPress={() => openExternal(exerciseVideos[guide]!.url)}
                       />
                       <Text style={s.helper}>
-                        {exerciseVideos[guide]!.source} · 외부 참고 영상 · 기구 모델이 다를 수
-                        있어요
+                        {t(
+                          '{0} · 외부 참고 영상 · 기구 모델이 다를 수 있어요',
+                          exerciseVideos[guide]!.source,
+                        )}
                       </Text>
                     </>
                   )}
                   <Button
                     secondary
-                    label="YouTube에서 한국어 자세·쇼츠 검색 ↗"
+                    label={t('YouTube에서 한국어 자세·쇼츠 검색 ↗')}
                     onPress={() => openExternal(videoSearch(guide))}
                   />
                   <Text style={s.helper}>
-                    인터넷 연결이 필요해요. 영상으로 나가면 진행 중인 운동은 일시정지하며 돌아와서
-                    직접 재개합니다. 검색 결과는 FitIn이 검수한 영상 목록이 아닙니다.
+                    {t(
+                      '인터넷 연결이 필요해요. 영상으로 나가면 진행 중인 운동은 일시정지하며 돌아와서 직접 재개합니다. 검색 결과는 FitIn이 검수한 영상 목록이 아닙니다.',
+                    )}
                   </Text>
                   <Text style={s.helper}>
-                    개발용 생성 이미지입니다. 정확한 자세와 기구 설정은 직원에게 확인하세요. 통증이
-                    있으면 멈춰주세요.
+                    {t(
+                      '기구 설정이 어렵다면 직원에게 도움을 요청하세요. 통증이 있으면 멈춰주세요.',
+                    )}
                   </Text>
                 </>
               ) : personal ? (
                 <>
                   <Text style={s.body}>
-                    시작하고 싶은 운동을 최대 3개 선택하세요. 선택 순서대로 앞에 배치하고 기존
-                    운동을 대체합니다. 기본 서비스는 머신 중심으로 유지돼요.
+                    {t(
+                      '시작하고 싶은 운동을 최대 3개 선택하세요. 선택 순서대로 앞에 배치하고 기존 운동을 대체합니다. 기본 서비스는 머신 중심으로 유지돼요.',
+                    )}
                   </Text>
                   <View style={s.chips}>
                     {(Object.keys(machines) as MachineId[]).map((id) => (
@@ -924,16 +1001,18 @@ function FitIn() {
                     ))}
                   </View>
                   <Text style={s.helper}>
-                    기본 루틴에서 다시 구성합니다. 같은 동작 패턴을 우선 대체하지만, 없으면 다른
-                    운동이 대체될 수 있어요. 적용 후 부위와 시간을 확인해주세요.
+                    {t(
+                      '기본 루틴에서 다시 구성합니다. 같은 동작 패턴을 우선 대체하지만, 없으면 다른 운동이 대체될 수 있어요. 적용 후 부위와 시간을 확인해주세요.',
+                    )}
                   </Text>
-                  <Button label="시작 운동 재구성하고 저장" onPress={applyPersonal} />
+                  <Button label={t('시작 운동 재구성하고 저장')} onPress={applyPersonal} />
                 </>
               ) : (
                 <>
                   <Text style={s.body}>
-                    오늘 한 번만 바꾸는 화면이에요. 여기서 바꾼 건 내 기본 루틴을 건드리지 않습니다.
-                    휴식을 몰래 줄이지 않고 전체 시간을 바로 계산해요.
+                    {t(
+                      '오늘 한 번만 바꾸는 화면이에요. 여기서 바꾼 건 내 기본 루틴을 건드리지 않습니다. 휴식을 몰래 줄이지 않고 전체 시간을 바로 계산해요.',
+                    )}
                   </Text>
                   {items.map((x, i) => (
                     <View key={`${i}:${x.machine}`} style={s.editRow}>
@@ -951,7 +1030,7 @@ function FitIn() {
                           <Pressable
                             disabled={i === 0}
                             accessibilityRole="button"
-                            accessibilityLabel={`${machines[x.machine].name} 위로`}
+                            accessibilityLabel={t('{0} 위로', machines[x.machine].name)}
                             style={s.miniButton}
                             onPress={() => reorder(i, -1)}
                           >
@@ -960,7 +1039,7 @@ function FitIn() {
                           <Pressable
                             disabled={i === items.length - 1}
                             accessibilityRole="button"
-                            accessibilityLabel={`${machines[x.machine].name} 아래로`}
+                            accessibilityLabel={t('{0} 아래로', machines[x.machine].name)}
                             style={s.miniButton}
                             onPress={() => reorder(i, 1)}
                           >
@@ -969,7 +1048,7 @@ function FitIn() {
                           <Pressable
                             disabled={items.length <= 1}
                             accessibilityRole="button"
-                            accessibilityLabel={`${machines[x.machine].name} 오늘은 빼기`}
+                            accessibilityLabel={t('{0} 오늘은 빼기', machines[x.machine].name)}
                             style={s.miniButton}
                             onPress={() => setItems((c) => c.filter((_, j) => j !== i))}
                           >
@@ -999,38 +1078,46 @@ function FitIn() {
                         </View>
                       )}
                       <View style={s.between}>
-                        <Text style={s.small}>{x.sets}세트</Text>
-                        <View style={s.actionRow}>
-                          <Button secondary label="세트 −" onPress={() => change(i, 'sets', -1)} />
-                          <Button secondary label="세트 +" onPress={() => change(i, 'sets', 1)} />
-                        </View>
-                      </View>
-                      <View style={s.between}>
-                        <Text style={s.small}>세트당 운동 {x.work}초</Text>
+                        <Text style={s.small}>{t('{0}세트', x.sets)}</Text>
                         <View style={s.actionRow}>
                           <Button
                             secondary
-                            label={`운동 −${WORK_STEP}`}
+                            label={t('세트 −')}
+                            onPress={() => change(i, 'sets', -1)}
+                          />
+                          <Button
+                            secondary
+                            label={t('세트 +')}
+                            onPress={() => change(i, 'sets', 1)}
+                          />
+                        </View>
+                      </View>
+                      <View style={s.between}>
+                        <Text style={s.small}>{t('세트당 운동 {0}초', x.work)}</Text>
+                        <View style={s.actionRow}>
+                          <Button
+                            secondary
+                            label={t('운동 −{0}', WORK_STEP)}
                             onPress={() => change(i, 'work', -WORK_STEP)}
                           />
                           <Button
                             secondary
-                            label={`운동 +${WORK_STEP}`}
+                            label={t('운동 +{0}', WORK_STEP)}
                             onPress={() => change(i, 'work', WORK_STEP)}
                           />
                         </View>
                       </View>
                       <View style={s.between}>
-                        <Text style={s.small}>휴식 {x.rest}초</Text>
+                        <Text style={s.small}>{t('휴식 {0}초', x.rest)}</Text>
                         <View style={s.actionRow}>
                           <Button
                             secondary
-                            label={`휴식 −${REST_STEP}`}
+                            label={t('휴식 −{0}', REST_STEP)}
                             onPress={() => change(i, 'rest', -REST_STEP)}
                           />
                           <Button
                             secondary
-                            label={`휴식 +${REST_STEP}`}
+                            label={t('휴식 +{0}', REST_STEP)}
                             onPress={() => change(i, 'rest', REST_STEP)}
                           />
                         </View>
@@ -1040,7 +1127,7 @@ function FitIn() {
                   <Button
                     secondary
                     disabled={items.length >= MAX_ITEMS}
-                    label={append ? '운동 추가 닫기' : '+ 오늘만 운동 추가'}
+                    label={append ? t('운동 추가 닫기') : t('+ 오늘만 운동 추가')}
                     onPress={() => setAppend(!append)}
                   />
                   {append && (
@@ -1048,19 +1135,19 @@ function FitIn() {
                       <Pressable
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: appendRepeat }}
-                        accessibilityLabel="이미 넣은 운동도 다시 추가"
+                        accessibilityLabel={t('이미 넣은 운동도 다시 추가')}
                         onPress={() => setAppendRepeat(!appendRepeat)}
                         style={s.check}
                       >
                         <View style={[s.box, appendRepeat && s.boxOn]}>
                           <Text style={s.tick}>{appendRepeat ? '✓' : ' '}</Text>
                         </View>
-                        <Text style={s.rowTitle}>이미 넣은 운동도 다시 추가</Text>
+                        <Text style={s.rowTitle}>{t('이미 넣은 운동도 다시 추가')}</Text>
                       </Pressable>
                       <Text style={s.helper}>
                         {appendRepeat
-                          ? '같은 운동을 한 번 더 넣습니다. 세트 기록은 각각 따로 남아요.'
-                          : '맨 뒤에 추가한 뒤 ↑로 원하는 자리에 올리세요.'}
+                          ? t('같은 운동을 한 번 더 넣습니다. 세트 기록은 각각 따로 남아요.')
+                          : t('맨 뒤에 추가한 뒤 ↑로 원하는 자리에 올리세요.')}
                       </Text>
                       <View style={s.chips}>
                         {(Object.keys(machines) as MachineId[])
@@ -1079,18 +1166,25 @@ function FitIn() {
                     </>
                   )}
                   <Text style={s.section}>
-                    운동 {formatTime(parts.work)} · 휴식 {formatTime(parts.rest)} · 이동·준비{' '}
-                    {formatTime(parts.move + parts.setup)}
+                    {t(
+                      '운동 {0} · 휴식 {1} · 이동·준비{2} {3}',
+                      formatTime(parts.work),
+                      formatTime(parts.rest),
+                      ' ',
+                      formatTime(parts.move + parts.setup),
+                    )}
                   </Text>
-                  <Text style={s.section}>전체 예상 {formatTime(total)} · 시간 제한 없음</Text>
+                  <Text style={s.section}>
+                    {t('전체 예상 {0} · 시간 제한 없음', formatTime(total))}
+                  </Text>
 
                   <Text style={s.helper}>
-                    변경한 부위: {items.map((x) => machines[x.machine].area).join(' · ')}
+                    {t('변경한 부위: {0}', items.map((x) => machines[x.machine].area).join(' · '))}
                   </Text>
                   {planError ? <Text style={s.limit}>{planError}</Text> : null}
                   <Button
                     disabled={!!planError}
-                    label="오늘만 적용"
+                    label={t('오늘만 적용')}
                     onPress={() => {
                       setEdit(false);
                       setAppend(false);
@@ -1100,12 +1194,13 @@ function FitIn() {
                   <Button
                     disabled={!!planError}
                     secondary
-                    label="내 기본 루틴에도 저장"
+                    label={t('내 기본 루틴에도 저장')}
                     onPress={savePlan}
                   />
                   <Text style={s.helper}>
-                    기본 루틴에 저장하면 다음 방문부터 계속 이 구성으로 시작해요. 세트당 시간과 전체
-                    휴식은 내 루틴 탭에서 더 자세히 조절할 수 있습니다.
+                    {t(
+                      '기본 루틴에 저장하면 다음 방문부터 계속 이 구성으로 시작해요. 세트당 시간과 전체 휴식은 내 루틴 탭에서 더 자세히 조절할 수 있습니다.',
+                    )}
                   </Text>
                 </>
               )}
@@ -1173,8 +1268,8 @@ const s = StyleSheet.create({
   subtitle: { fontSize: 13, lineHeight: 23, color: '#7B8C8D', marginTop: 8 },
   columns: { flexDirection: 'row', gap: 28, alignItems: 'flex-start' },
   stacked: { gap: 20 },
-  mainColumn: { flex: 1.25 },
-  sideColumn: { flex: 1, gap: 16 },
+  mainColumn: { flexGrow: 1.25, flexShrink: 1, flexBasis: 0, minWidth: 0 },
+  sideColumn: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: 16 },
   visualCard: {
     backgroundColor: 'white',
     borderRadius: 24,

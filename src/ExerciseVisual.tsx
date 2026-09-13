@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import React from 'react';
 import { DimensionValue, Image, View } from 'react-native';
 import { MachineId, machines } from './workout';
@@ -21,10 +22,15 @@ export function ExerciseVisual({ machine, size }: { machine: MachineId; size?: n
   const index = slot >= 18 ? slot - 18 : slot % 9;
   return (
     <View
+      testID="exercise-image"
       accessible
-      accessibilityLabel={`${machines[machine].name}, ${machines[machine].area} 자극 부위가 강조된 개발용 그림`}
+      accessibilityLabel={t(
+        '{0}, {1} 자극 부위 그림',
+        machines[machine].name,
+        machines[machine].area,
+      )}
       style={[
-        { overflow: 'hidden', backgroundColor: '#fff', borderRadius: 20 },
+        { overflow: 'hidden', backgroundColor: '#fff', borderRadius: 20, flexShrink: 0 },
         size === undefined ? { width: '100%', aspectRatio: 1 } : { width: size, height: size },
       ]}
     >

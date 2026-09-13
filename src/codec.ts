@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import {
   Data,
   DEFAULT_REST,
@@ -44,8 +45,10 @@ export function decode(raw: string): Data {
     !Array.isArray(d.history) ||
     !object(d.preferences)
   )
-    throw Error('지원하지 않는 저장 형식입니다.');
+    throw Error(t('지원하지 않는 저장 형식입니다.'));
   const pref = d.preferences;
+  if (pref.language !== undefined && !['en', 'ko'].includes(pref.language))
+    throw Error(t('개인 설정을 읽을 수 없습니다.'));
   if (
     !['beginner', 'intermediate', 'advanced'].includes(pref.level) ||
     ![
@@ -68,7 +71,7 @@ export function decode(raw: string): Data {
     !pref.starters.every(machine) ||
     new Set(pref.starters).size !== pref.starters.length
   )
-    throw Error('개인 설정을 읽을 수 없습니다.');
+    throw Error(t('개인 설정을 읽을 수 없습니다.'));
   if (pref.savedPlan !== null) validateTemplate(pref.savedPlan);
   if (d.version >= 3) {
     if (
@@ -78,7 +81,7 @@ export function decode(raw: string): Data {
       !object(pref.templates) ||
       Object.keys(pref.templates).some((key) => !routines.includes(key))
     )
-      throw Error('개인 설정을 읽을 수 없습니다.');
+      throw Error(t('개인 설정을 읽을 수 없습니다.'));
     for (const template of Object.values(pref.templates) as PlanItem[][])
       validateTemplate(template);
   }
@@ -100,7 +103,7 @@ export function decode(raw: string): Data {
         r.performed.every(machine),
     )
   )
-    throw Error('기록을 읽을 수 없습니다.');
+    throw Error(t('기록을 읽을 수 없습니다.'));
   const s = d.session;
   if (s !== null) {
     if (
@@ -126,7 +129,7 @@ export function decode(raw: string): Data {
       s.phases.length < 2 ||
       s.phases.length > 160
     )
-      throw Error('진행 중인 세션을 읽을 수 없습니다.');
+      throw Error(t('진행 중인 세션을 읽을 수 없습니다.'));
     if (
       !s.phases.every(
         (p: unknown) =>
@@ -153,7 +156,7 @@ export function decode(raw: string): Data {
         s.phases.some((p: any) => p.id === id && p.kind === 'work'),
       )
     )
-      throw Error('운동 단계가 손상됐습니다.');
+      throw Error(t('운동 단계가 손상됐습니다.'));
   }
   return upgrade(d);
 }

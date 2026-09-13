@@ -11,7 +11,7 @@ Applies to this repository and every AI working in it. The latest explicit user 
 
 ## Product invariants
 
-- Offline first, local durable storage, no login or backend in initial scope.
+- Offline first, local durable storage. Optional Supabase accounts/private routines are now authorized; follow docs/architecture/SUPABASE.md. Guest workouts must not acquire a network dependency.
 - Machine-led beginner coaching remains the default. A user's dumbbell example is an optional customizable starter, never a universal default.
 - Check-in occurs **after warmup**. Only 10 seconds of setup precede the first working set. Do not reintroduce the old 3-minute warmup.
 - Auto progression and explicit controls coexist: complete set, skip rest/transition, extend current phase, pause/resume. Pause freezes phase and active time budget.

@@ -1,5 +1,7 @@
 /// <reference types="node" />
-import test from 'node:test';
+import test, { beforeEach } from 'node:test';
+import { setLanguage } from '../src/i18n';
+beforeEach(() => setLanguage('ko'));
 import assert from 'node:assert/strict';
 import { defaultPlan, planSeconds, machines, begin, emptyData } from '../src/workout';
 import { scheduleExample } from '../src/programGuidance';

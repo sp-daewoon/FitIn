@@ -1,4 +1,6 @@
+import { t } from './i18n';
 import React, { useEffect, useState } from 'react';
+import { SelectField } from './SelectField';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   applyGlobalRest,
@@ -105,9 +107,11 @@ export function RoutineBuilder({
 
   return (
     <View style={s.card}>
-      <Text style={s.heading}>내 기본 루틴 · 계속 유지되는 목표</Text>
+      <Text style={s.heading}>{t('내 기본 루틴 · 계속 유지되는 목표')}</Text>
       <Text style={s.meta}>
-        여기서 저장하면 매 방문에 그대로 적용돼요. 오늘 하루만 바꾸는 건 오늘의 운동에서 합니다.
+        {t(
+          '여기서 저장하면 매 방문에 그대로 적용돼요. 오늘 하루만 바꾸는 건 오늘의 운동에서 합니다.',
+        )}
       </Text>
       {cycle.length > 1 && (
         <View style={s.chips}>
@@ -125,22 +129,13 @@ export function RoutineBuilder({
         </View>
       )}
 
-      <Text style={s.heading}>휴식 {rest}초 · 모든 세트 공통</Text>
-      <View style={s.chips}>
-        {REST_CHOICES.map((value) => (
-          <Pressable
-            key={value}
-            accessibilityRole="button"
-            accessibilityLabel={`전체 휴식 ${value}초`}
-            accessibilityState={{ selected: rest === value }}
-            onPress={() => changeRest(value)}
-            style={[s.chip, rest === value && s.on]}
-          >
-            <Text style={s.name}>{value}초</Text>
-          </Pressable>
-        ))}
-      </View>
-      <Text style={s.meta}>개별 휴식을 켠 운동은 이 값을 따르지 않고 따로 표시돼요.</Text>
+      <SelectField
+        label={t('전체 휴식')}
+        value={rest}
+        options={REST_CHOICES.map((value) => ({ value, label: t('{0}초', value) }))}
+        onChange={changeRest}
+      />
+      <Text style={s.meta}>{t('개별 휴식을 켠 운동은 이 값을 따르지 않고 따로 표시돼요.')}</Text>
 
       {draft.map((x, i) => (
         <View key={`${i}:${x.machine}`} style={s.item}>
@@ -155,7 +150,7 @@ export function RoutineBuilder({
               <Pressable
                 disabled={i === 0}
                 accessibilityRole="button"
-                accessibilityLabel={`${machines[x.machine].name} 위로`}
+                accessibilityLabel={t('{0} 위로', machines[x.machine].name)}
                 onPress={() => move(i, -1)}
                 style={[s.mini, i === 0 && s.off]}
               >
@@ -164,7 +159,7 @@ export function RoutineBuilder({
               <Pressable
                 disabled={i === draft.length - 1}
                 accessibilityRole="button"
-                accessibilityLabel={`${machines[x.machine].name} 아래로`}
+                accessibilityLabel={t('{0} 아래로', machines[x.machine].name)}
                 onPress={() => move(i, 1)}
                 style={[s.mini, i === draft.length - 1 && s.off]}
               >
@@ -173,7 +168,7 @@ export function RoutineBuilder({
               <Pressable
                 disabled={draft.length <= 1}
                 accessibilityRole="button"
-                accessibilityLabel={`${machines[x.machine].name} 빼기`}
+                accessibilityLabel={t('{0} 빼기', machines[x.machine].name)}
                 onPress={() => touch(draft.filter((_, j) => j !== i))}
                 style={[s.mini, draft.length <= 1 && s.off]}
               >
@@ -182,11 +177,11 @@ export function RoutineBuilder({
             </View>
           </View>
           <View style={s.between}>
-            <Text style={s.meta}>{x.sets}세트</Text>
+            <Text style={s.meta}>{t('{0}세트', x.sets)}</Text>
             <View style={s.row}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${machines[x.machine].name} 세트 줄이기`}
+                accessibilityLabel={t('{0} 세트 줄이기', machines[x.machine].name)}
                 onPress={() => update(i, { sets: step(x.sets, -1, 1, 5) })}
                 style={s.mini}
               >
@@ -194,7 +189,7 @@ export function RoutineBuilder({
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${machines[x.machine].name} 세트 늘리기`}
+                accessibilityLabel={t('{0} 세트 늘리기', machines[x.machine].name)}
                 onPress={() => update(i, { sets: step(x.sets, 1, 1, 5) })}
                 style={s.mini}
               >
@@ -203,11 +198,11 @@ export function RoutineBuilder({
             </View>
           </View>
           <View style={s.between}>
-            <Text style={s.meta}>세트당 운동 {x.work}초</Text>
+            <Text style={s.meta}>{t('세트당 운동 {0}초', x.work)}</Text>
             <View style={s.row}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${machines[x.machine].name} 세트 시간 줄이기`}
+                accessibilityLabel={t('{0} 세트 시간 줄이기', machines[x.machine].name)}
                 onPress={() => update(i, { work: step(x.work, -WORK_STEP, 20, 180) })}
                 style={s.mini}
               >
@@ -215,7 +210,7 @@ export function RoutineBuilder({
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${machines[x.machine].name} 세트 시간 늘리기`}
+                accessibilityLabel={t('{0} 세트 시간 늘리기', machines[x.machine].name)}
                 onPress={() => update(i, { work: step(x.work, WORK_STEP, 20, 180) })}
                 style={s.mini}
               >
@@ -225,25 +220,25 @@ export function RoutineBuilder({
           </View>
           <View style={s.between}>
             <Text style={s.meta}>
-              휴식 {x.rest}초 {x.restOverride ? '· 이 운동만' : '· 전체 설정'}
+              {t('휴식 {0}초 {1}', x.rest, x.restOverride ? t('· 이 운동만') : t('· 전체 설정'))}
             </Text>
             <View style={s.row}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityState={{ selected: !!x.restOverride }}
-                accessibilityLabel={`${machines[x.machine].name} 개별 휴식`}
+                accessibilityLabel={t('{0} 개별 휴식', machines[x.machine].name)}
                 onPress={() =>
                   update(i, x.restOverride ? { restOverride: false, rest } : { restOverride: true })
                 }
                 style={[s.mini, x.restOverride && s.on]}
               >
-                <Text>{x.restOverride ? '전체로' : '개별'}</Text>
+                <Text>{x.restOverride ? t('전체로') : t('개별')}</Text>
               </Pressable>
               {x.restOverride && (
                 <>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`${machines[x.machine].name} 휴식 줄이기`}
+                    accessibilityLabel={t('{0} 휴식 줄이기', machines[x.machine].name)}
                     onPress={() => update(i, { rest: step(x.rest, -REST_STEP, 30, 180) })}
                     style={s.mini}
                   >
@@ -251,7 +246,7 @@ export function RoutineBuilder({
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`${machines[x.machine].name} 휴식 늘리기`}
+                    accessibilityLabel={t('{0} 휴식 늘리기', machines[x.machine].name)}
                     onPress={() => update(i, { rest: step(x.rest, REST_STEP, 30, 180) })}
                     style={s.mini}
                   >
@@ -270,26 +265,26 @@ export function RoutineBuilder({
         onPress={() => setAdding(!adding)}
         style={[s.button, draft.length >= MAX_ITEMS && s.off]}
       >
-        <Text style={s.name}>{adding ? '운동 추가 닫기' : '+ 운동 추가'}</Text>
+        <Text style={s.name}>{adding ? t('운동 추가 닫기') : t('+ 운동 추가')}</Text>
       </Pressable>
       {adding && (
         <>
           <Pressable
             accessibilityRole="checkbox"
             accessibilityState={{ checked: allowRepeat }}
-            accessibilityLabel="이미 넣은 운동도 다시 추가"
+            accessibilityLabel={t('이미 넣은 운동도 다시 추가')}
             onPress={() => setAllowRepeat(!allowRepeat)}
             style={s.check}
           >
             <View style={[s.box, allowRepeat && s.boxOn]}>
               <Text style={s.tick}>{allowRepeat ? '✓' : ' '}</Text>
             </View>
-            <Text style={s.name}>이미 넣은 운동도 다시 추가</Text>
+            <Text style={s.name}>{t('이미 넣은 운동도 다시 추가')}</Text>
           </Pressable>
           <Text style={s.meta}>
             {allowRepeat
-              ? '같은 운동을 한 번 더 넣습니다. 세트 기록은 각각 따로 남아요.'
-              : '맨 뒤에 추가한 뒤 순서를 올려 원하는 자리에 두세요.'}
+              ? t('같은 운동을 한 번 더 넣습니다. 세트 기록은 각각 따로 남아요.')
+              : t('맨 뒤에 추가한 뒤 순서를 올려 원하는 자리에 두세요.')}
           </Text>
           <View style={s.chips}>
             {options.map((id) => (
@@ -303,29 +298,33 @@ export function RoutineBuilder({
 
       <View style={s.budget}>
         <View style={s.between}>
-          <Text style={s.meta}>운동 시간</Text>
+          <Text style={s.meta}>{t('운동 시간')}</Text>
           <Text style={s.value}>{formatTime(parts.work)}</Text>
         </View>
         <View style={s.between}>
-          <Text style={s.meta}>휴식 시간</Text>
+          <Text style={s.meta}>{t('휴식 시간')}</Text>
           <Text style={s.value}>{formatTime(parts.rest)}</Text>
         </View>
         <View style={s.between}>
-          <Text style={s.meta}>기구 이동·정리</Text>
+          <Text style={s.meta}>{t('기구 이동·정리')}</Text>
           <Text style={s.value}>{formatTime(parts.move + parts.setup)}</Text>
         </View>
         <View style={s.between}>
-          <Text style={s.name}>합계</Text>
+          <Text style={s.name}>{t('합계')}</Text>
           <Text style={s.value}>{formatTime(parts.total)}</Text>
         </View>
         <Text style={[s.meta, missingWork > 0 && s.warn]}>
           {missingWork > 0
-            ? `운동 구간 목표 25분까지 ${formatTime(missingWork)} 남음 · 종목·세트·시간을 직접 조절하세요.`
-            : '계획상 운동 구간 25분 목표 충족'}
+            ? t(
+                '운동 구간 목표 25분까지 {0} 남음 · 종목·세트·시간을 직접 조절하세요.',
+                formatTime(missingWork),
+              )
+            : t('계획상 운동 구간 25분 목표 충족')}
         </Text>
         <Text style={s.meta}>
-          휴식·이동은 운동 구간에서 제외합니다. 전체 루틴이 끝날 때까지 진행하며 짧게 설정해도
-          저장할 수 있어요. 실제 수행은 완료 버튼으로 따로 기록합니다.
+          {t(
+            '휴식·이동은 운동 구간에서 제외합니다. 전체 루틴이 끝날 때까지 진행하며 짧게 설정해도 저장할 수 있어요. 실제 수행은 완료 버튼으로 따로 기록합니다.',
+          )}
         </Text>
       </View>
       {error ? <Text style={s.warn}>{error}</Text> : null}
@@ -339,18 +338,18 @@ export function RoutineBuilder({
         style={[s.button, !!error && s.off]}
       >
         <Text style={s.name}>
-          {saved ? '저장했어요 ✓' : `${routineNames[target]} 기본 루틴 저장`}
+          {saved ? t('저장했어요 ✓') : t('{0} 기본 루틴 저장', routineNames[target])}
         </Text>
       </Pressable>
       {stored && (
         <Pressable accessibilityRole="button" onPress={() => onReset(target)} style={s.button}>
-          <Text style={s.name}>기본 구성으로 되돌리기</Text>
+          <Text style={s.name}>{t('기본 구성으로 되돌리기')}</Text>
         </Pressable>
       )}
       <Text style={s.meta}>
         {session
-          ? '진행 중인 운동에는 적용되지 않아요. 저장한 목표는 다음 체크인부터 사용합니다.'
-          : '저장해도 지난 기록과 다음 순서는 그대로 유지됩니다.'}
+          ? t('진행 중인 운동에는 적용되지 않아요. 저장한 목표는 다음 체크인부터 사용합니다.')
+          : t('저장해도 지난 기록과 다음 순서는 그대로 유지됩니다.')}
       </Text>
     </View>
   );

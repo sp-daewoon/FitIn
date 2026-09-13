@@ -1,3 +1,4 @@
+import { t } from './i18n';
 /** Platform-independent clock and command engine. All times are active seconds. */
 export const TOTAL_SECONDS = 2400;
 export const PREPARE_SECONDS = 10;
@@ -13,251 +14,616 @@ export const WORK_STEP = 5;
 export const REST_STEP = 15;
 export const machines = {
   chestPress: {
-    name: '체스트 프레스',
-    equipment: '머신',
-    region: '상체',
-    area: '가슴',
-    secondary: '삼두 · 앞쪽 어깨',
-    pattern: '수평 밀기',
+    get name() {
+      return t('체스트 프레스');
+    },
+    get equipment() {
+      return t('머신');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('가슴');
+    },
+    get secondary() {
+      return t('삼두 · 앞쪽 어깨');
+    },
+    get pattern() {
+      return t('수평 밀기');
+    },
     atlas: 0,
-    cue: '등을 붙이고 손목을 곧게 유지하며 앞으로 밀어주세요.',
-    setup: '손잡이가 가슴 중앙에 오도록 의자 높이를 맞추세요.',
+    get cue() {
+      return t('등을 붙이고 손목을 곧게 유지하며 앞으로 밀어주세요.');
+    },
+    get setup() {
+      return t('손잡이가 가슴 중앙에 오도록 의자 높이를 맞추세요.');
+    },
   },
   latPulldown: {
-    name: '랫 풀다운',
-    equipment: '머신',
-    region: '상체',
-    area: '등',
-    secondary: '이두',
-    pattern: '수직 당기기',
+    get name() {
+      return t('랫 풀다운');
+    },
+    get equipment() {
+      return t('머신');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('등');
+    },
+    get secondary() {
+      return t('이두');
+    },
+    get pattern() {
+      return t('수직 당기기');
+    },
     atlas: 1,
-    cue: '어깨를 내리고 팔꿈치를 아래로 당겨주세요.',
-    setup: '허벅지 패드를 고정하고 발바닥을 바닥에 붙이세요.',
+    get cue() {
+      return t('어깨를 내리고 팔꿈치를 아래로 당겨주세요.');
+    },
+    get setup() {
+      return t('허벅지 패드를 고정하고 발바닥을 바닥에 붙이세요.');
+    },
   },
   row: {
-    name: '시티드 로우',
-    equipment: '머신',
-    region: '상체',
-    area: '등',
-    secondary: '이두 · 뒤쪽 어깨',
-    pattern: '수평 당기기',
+    get name() {
+      return t('시티드 로우');
+    },
+    get equipment() {
+      return t('머신');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('등');
+    },
+    get secondary() {
+      return t('이두 · 뒤쪽 어깨');
+    },
+    get pattern() {
+      return t('수평 당기기');
+    },
     atlas: 2,
-    cue: '몸통을 고정하고 팔꿈치를 뒤로 보내세요.',
-    setup: '가슴 패드와 의자를 조절하고 손목을 곧게 유지하세요.',
+    get cue() {
+      return t('몸통을 고정하고 팔꿈치를 뒤로 보내세요.');
+    },
+    get setup() {
+      return t('가슴 패드와 의자를 조절하고 손목을 곧게 유지하세요.');
+    },
   },
   legPress: {
-    name: '레그 프레스',
-    equipment: '머신',
-    region: '하체',
-    area: '허벅지 앞 · 엉덩이',
-    secondary: '허벅지 뒤',
-    pattern: '하체 밀기',
+    get name() {
+      return t('레그 프레스');
+    },
+    get equipment() {
+      return t('머신');
+    },
+    get region() {
+      return t('하체');
+    },
+    get area() {
+      return t('허벅지 앞 · 엉덩이');
+    },
+    get secondary() {
+      return t('허벅지 뒤');
+    },
+    get pattern() {
+      return t('하체 밀기');
+    },
     atlas: 3,
-    cue: '등과 엉덩이를 붙이고 무릎을 발끝 방향으로 움직이세요.',
-    setup: '발을 어깨너비로 놓고 안전장치 위치를 먼저 확인하세요.',
+    get cue() {
+      return t('등과 엉덩이를 붙이고 무릎을 발끝 방향으로 움직이세요.');
+    },
+    get setup() {
+      return t('발을 어깨너비로 놓고 안전장치 위치를 먼저 확인하세요.');
+    },
   },
   legCurl: {
-    name: '시티드 레그 컬',
-    equipment: '머신',
-    region: '하체',
-    area: '허벅지 뒤',
-    secondary: '종아리',
-    pattern: '무릎 굽히기',
+    get name() {
+      return t('시티드 레그 컬');
+    },
+    get equipment() {
+      return t('머신');
+    },
+    get region() {
+      return t('하체');
+    },
+    get area() {
+      return t('허벅지 뒤');
+    },
+    get secondary() {
+      return t('종아리');
+    },
+    get pattern() {
+      return t('무릎 굽히기');
+    },
     atlas: 4,
-    cue: '허리를 등받이에 붙이고 무릎을 천천히 구부려주세요.',
-    setup: '회전축과 무릎을 맞추고 아래 패드가 발목 뒤에 오도록 조절하세요.',
+    get cue() {
+      return t('허리를 등받이에 붙이고 무릎을 천천히 구부려주세요.');
+    },
+    get setup() {
+      return t('회전축과 무릎을 맞추고 아래 패드가 발목 뒤에 오도록 조절하세요.');
+    },
   },
   legExtension: {
-    name: '레그 익스텐션',
-    equipment: '머신',
-    region: '하체',
-    area: '허벅지 앞',
-    secondary: '대퇴사두근',
-    pattern: '무릎 펴기',
+    get name() {
+      return t('레그 익스텐션');
+    },
+    get equipment() {
+      return t('머신');
+    },
+    get region() {
+      return t('하체');
+    },
+    get area() {
+      return t('허벅지 앞');
+    },
+    get secondary() {
+      return t('대퇴사두근');
+    },
+    get pattern() {
+      return t('무릎 펴기');
+    },
     atlas: 5,
-    cue: '천천히 무릎을 펴고 끝에서 과하게 잠그지 마세요.',
-    setup: '회전축을 무릎에 맞추고 패드를 발목 바로 위 앞쪽에 두세요.',
+    get cue() {
+      return t('천천히 무릎을 펴고 끝에서 과하게 잠그지 마세요.');
+    },
+    get setup() {
+      return t('회전축을 무릎에 맞추고 패드를 발목 바로 위 앞쪽에 두세요.');
+    },
   },
   shoulderPress: {
-    name: '덤벨 숄더 프레스',
-    equipment: '덤벨',
-    region: '상체',
-    area: '어깨',
-    secondary: '삼두',
-    pattern: '수직 밀기',
+    get name() {
+      return t('덤벨 숄더 프레스');
+    },
+    get equipment() {
+      return t('덤벨');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('어깨');
+    },
+    get secondary() {
+      return t('삼두');
+    },
+    get pattern() {
+      return t('수직 밀기');
+    },
     atlas: 6,
-    cue: '허리를 젖히지 않고 손목과 팔꿈치를 정렬해 밀어주세요.',
-    setup: '가벼운 덤벨을 고르고 발과 등을 안정적으로 지지하세요.',
+    get cue() {
+      return t('허리를 젖히지 않고 손목과 팔꿈치를 정렬해 밀어주세요.');
+    },
+    get setup() {
+      return t('가벼운 덤벨을 고르고 발과 등을 안정적으로 지지하세요.');
+    },
   },
   reverseGrip: {
-    name: '덤벨 리버스 그립 로우',
-    equipment: '덤벨',
-    region: '상체',
-    area: '등',
-    secondary: '이두',
-    pattern: '수평 당기기',
+    get name() {
+      return t('덤벨 리버스 그립 로우');
+    },
+    get equipment() {
+      return t('덤벨');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('등');
+    },
+    get secondary() {
+      return t('이두');
+    },
+    get pattern() {
+      return t('수평 당기기');
+    },
     atlas: 7,
-    cue: '허리의 중립을 유지하고 반동 없이 팔꿈치를 뒤로 당겨주세요.',
-    setup: '역그립으로 덤벨을 잡고 무릎을 조금 굽혀 엉덩이를 뒤로 보내세요.',
+    get cue() {
+      return t('허리의 중립을 유지하고 반동 없이 팔꿈치를 뒤로 당겨주세요.');
+    },
+    get setup() {
+      return t('역그립으로 덤벨을 잡고 무릎을 조금 굽혀 엉덩이를 뒤로 보내세요.');
+    },
   },
   pecDeck: {
-    name: '펙 덱',
-    equipment: '머신',
-    region: '상체',
-    area: '가슴',
-    secondary: '앞쪽 어깨',
-    pattern: '가슴 모으기',
+    get name() {
+      return t('펙 덱');
+    },
+    get equipment() {
+      return t('머신');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('가슴');
+    },
+    get secondary() {
+      return t('앞쪽 어깨');
+    },
+    get pattern() {
+      return t('가슴 모으기');
+    },
     atlas: 8,
-    cue: '어깨를 과하게 벌리지 않고 가슴 앞에서 천천히 모아주세요.',
-    setup: '좌석 높이와 시작 각도를 직원에게 확인하세요.',
+    get cue() {
+      return t('어깨를 과하게 벌리지 않고 가슴 앞에서 천천히 모아주세요.');
+    },
+    get setup() {
+      return t('좌석 높이와 시작 각도를 직원에게 확인하세요.');
+    },
   },
   squat: {
-    name: '바벨 스쿼트',
-    equipment: '바벨',
-    region: '하체',
-    area: '허벅지 앞 · 엉덩이',
-    secondary: '코어 · 허벅지 뒤',
-    pattern: '하체 밀기',
+    get name() {
+      return t('바벨 스쿼트');
+    },
+    get equipment() {
+      return t('바벨');
+    },
+    get region() {
+      return t('하체');
+    },
+    get area() {
+      return t('허벅지 앞 · 엉덩이');
+    },
+    get secondary() {
+      return t('코어 · 허벅지 뒤');
+    },
+    get pattern() {
+      return t('하체 밀기');
+    },
     atlas: 9,
-    cue: '발바닥을 안정적으로 지지하고 무릎을 발끝 방향으로 움직이세요.',
-    setup: '랙의 안전바 높이를 확인하고, 가벼운 바를 등 위쪽에 안정적으로 올리세요.',
+    get cue() {
+      return t('발바닥을 안정적으로 지지하고 무릎을 발끝 방향으로 움직이세요.');
+    },
+    get setup() {
+      return t('랙의 안전바 높이를 확인하고, 가벼운 바를 등 위쪽에 안정적으로 올리세요.');
+    },
   },
   benchPress: {
-    name: '바벨 벤치 프레스',
-    equipment: '바벨',
-    region: '상체',
-    area: '가슴',
-    secondary: '삼두 · 앞쪽 어깨',
-    pattern: '수평 밀기',
+    get name() {
+      return t('바벨 벤치 프레스');
+    },
+    get equipment() {
+      return t('바벨');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('가슴');
+    },
+    get secondary() {
+      return t('삼두 · 앞쪽 어깨');
+    },
+    get pattern() {
+      return t('수평 밀기');
+    },
     atlas: 10,
-    cue: '발과 등을 안정적으로 지지하고 바를 가슴 쪽으로 천천히 내리세요.',
-    setup: '평평한 벤치와 안전장치를 확인하고, 처음에는 직원에게 보조를 요청하세요.',
+    get cue() {
+      return t('발과 등을 안정적으로 지지하고 바를 가슴 쪽으로 천천히 내리세요.');
+    },
+    get setup() {
+      return t('평평한 벤치와 안전장치를 확인하고, 처음에는 직원에게 보조를 요청하세요.');
+    },
   },
   deadlift: {
-    name: '바벨 데드리프트',
-    equipment: '바벨',
-    region: '전신',
-    area: '엉덩이 · 허벅지 뒤',
-    secondary: '척추기립근 · 등 · 코어',
-    pattern: '힙 힌지',
+    get name() {
+      return t('바벨 데드리프트');
+    },
+    get equipment() {
+      return t('바벨');
+    },
+    get region() {
+      return t('전신');
+    },
+    get area() {
+      return t('엉덩이 · 허벅지 뒤');
+    },
+    get secondary() {
+      return t('척추기립근 · 등 · 코어');
+    },
+    get pattern() {
+      return t('힙 힌지');
+    },
     atlas: 11,
-    cue: '바를 몸 가까이 두고, 허리의 중립을 유지하며 바닥을 밀어 일어나세요.',
-    setup:
-      '바를 발 중앙 위에 두고 엉덩이를 뒤로 보내 잡으세요. 처음에는 힙 힌지 자세를 확인받으세요.',
+    get cue() {
+      return t('바를 몸 가까이 두고, 허리의 중립을 유지하며 바닥을 밀어 일어나세요.');
+    },
+    get setup() {
+      return t(
+        '바를 발 중앙 위에 두고 엉덩이를 뒤로 보내 잡으세요. 처음에는 힙 힌지 자세를 확인받으세요.',
+      );
+    },
   },
   barbellRow: {
-    name: '바벨 로우',
-    equipment: '바벨',
-    region: '상체',
-    area: '등',
-    secondary: '승모근 · 뒤쪽 어깨 · 이두 · 코어',
-    pattern: '수평 당기기',
+    get name() {
+      return t('바벨 로우');
+    },
+    get equipment() {
+      return t('바벨');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('등');
+    },
+    get secondary() {
+      return t('승모근 · 뒤쪽 어깨 · 이두 · 코어');
+    },
+    get pattern() {
+      return t('수평 당기기');
+    },
     atlas: 12,
-    cue: '숙인 몸통을 고정하고 팔꿈치를 뒤로 보내 바를 몸 쪽으로 당기세요.',
-    setup: '무릎을 조금 굽히고 엉덩이를 뒤로 보내 상체를 숙이세요. 가벼운 바부터 시작하세요.',
+    get cue() {
+      return t('숙인 몸통을 고정하고 팔꿈치를 뒤로 보내 바를 몸 쪽으로 당기세요.');
+    },
+    get setup() {
+      return t('무릎을 조금 굽히고 엉덩이를 뒤로 보내 상체를 숙이세요. 가벼운 바부터 시작하세요.');
+    },
   },
   overheadPress: {
-    name: '바벨 오버헤드 프레스',
-    equipment: '바벨',
-    region: '상체',
-    area: '어깨',
-    secondary: '삼두 · 코어',
-    pattern: '수직 밀기',
+    get name() {
+      return t('바벨 오버헤드 프레스');
+    },
+    get equipment() {
+      return t('바벨');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('어깨');
+    },
+    get secondary() {
+      return t('삼두 · 코어');
+    },
+    get pattern() {
+      return t('수직 밀기');
+    },
     atlas: 13,
-    cue: '몸통을 안정적으로 유지하고 허리를 과하게 젖히지 않으며 바를 위로 밀어주세요.',
-    setup: '발을 안정적으로 놓고 바를 어깨 앞쪽에 준비하세요. 머리 위 공간을 확인하세요.',
+    get cue() {
+      return t('몸통을 안정적으로 유지하고 허리를 과하게 젖히지 않으며 바를 위로 밀어주세요.');
+    },
+    get setup() {
+      return t('발을 안정적으로 놓고 바를 어깨 앞쪽에 준비하세요. 머리 위 공간을 확인하세요.');
+    },
   },
   dumbbellBenchPress: {
-    name: '덤벨 벤치 프레스',
-    equipment: '덤벨',
-    region: '상체',
-    area: '가슴',
-    secondary: '삼두 · 앞쪽 어깨',
-    pattern: '수평 밀기',
+    get name() {
+      return t('덤벨 벤치 프레스');
+    },
+    get equipment() {
+      return t('덤벨');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('가슴');
+    },
+    get secondary() {
+      return t('삼두 · 앞쪽 어깨');
+    },
+    get pattern() {
+      return t('수평 밀기');
+    },
     atlas: 14,
-    cue: '양쪽 덤벨을 균형 있게 움직이고 어깨가 과하게 뒤로 꺾이지 않게 하세요.',
-    setup:
-      '평평한 벤치에 등을 지지하고 발을 바닥에 붙이세요. 내려놓기 쉬운 가벼운 무게를 고르세요.',
+    get cue() {
+      return t('양쪽 덤벨을 균형 있게 움직이고 어깨가 과하게 뒤로 꺾이지 않게 하세요.');
+    },
+    get setup() {
+      return t(
+        '평평한 벤치에 등을 지지하고 발을 바닥에 붙이세요. 내려놓기 쉬운 가벼운 무게를 고르세요.',
+      );
+    },
   },
   dumbbellRow: {
-    name: '덤벨 원암 로우',
-    equipment: '덤벨',
-    region: '상체',
-    area: '등',
-    secondary: '이두 · 뒤쪽 어깨 · 코어',
-    pattern: '수평 당기기',
+    get name() {
+      return t('덤벨 원암 로우');
+    },
+    get equipment() {
+      return t('덤벨');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('등');
+    },
+    get secondary() {
+      return t('이두 · 뒤쪽 어깨 · 코어');
+    },
+    get pattern() {
+      return t('수평 당기기');
+    },
     atlas: 15,
-    cue: '몸통을 비틀지 않고 팔꿈치를 엉덩이 쪽으로 당기세요. 양쪽을 균형 있게 진행하세요.',
-    setup:
-      '한 손과 무릎을 벤치에 지지하고 반대 발은 바닥에 놓으세요. 한 세트 안에서 좌우를 번갈아 진행해요.',
+    get cue() {
+      return t('몸통을 비틀지 않고 팔꿈치를 엉덩이 쪽으로 당기세요. 양쪽을 균형 있게 진행하세요.');
+    },
+    get setup() {
+      return t(
+        '한 손과 무릎을 벤치에 지지하고 반대 발은 바닥에 놓으세요. 한 세트 안에서 좌우를 번갈아 진행해요.',
+      );
+    },
   },
   lateralRaise: {
-    name: '덤벨 사이드 레터럴 레이즈',
-    equipment: '덤벨',
-    region: '상체',
-    area: '옆쪽 어깨',
-    secondary: '어깨 안정근',
-    pattern: '어깨 벌리기',
+    get name() {
+      return t('덤벨 사이드 레터럴 레이즈');
+    },
+    get equipment() {
+      return t('덤벨');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('옆쪽 어깨');
+    },
+    get secondary() {
+      return t('어깨 안정근');
+    },
+    get pattern() {
+      return t('어깨 벌리기');
+    },
     atlas: 16,
-    cue: '팔꿈치를 살짝 굽히고 어깨를 으쓱하지 않으며 덤벨을 옆으로 들어주세요.',
-    setup: '가벼운 덤벨을 몸 옆에 들고 서세요. 반동 없이 제어할 수 있는 높이까지만 들어요.',
+    get cue() {
+      return t('팔꿈치를 살짝 굽히고 어깨를 으쓱하지 않으며 덤벨을 옆으로 들어주세요.');
+    },
+    get setup() {
+      return t('가벼운 덤벨을 몸 옆에 들고 서세요. 반동 없이 제어할 수 있는 높이까지만 들어요.');
+    },
   },
   dumbbellCurl: {
-    name: '덤벨 컬',
-    equipment: '덤벨',
-    region: '상체',
-    area: '이두',
-    secondary: '상완근 · 전완',
-    pattern: '팔꿈치 굽히기',
+    get name() {
+      return t('덤벨 컬');
+    },
+    get equipment() {
+      return t('덤벨');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('이두');
+    },
+    get secondary() {
+      return t('상완근 · 전완');
+    },
+    get pattern() {
+      return t('팔꿈치 굽히기');
+    },
     atlas: 17,
-    cue: '팔꿈치를 몸 옆에 두고 몸통 반동 없이 덤벨을 천천히 올려주세요.',
-    setup: '양손에 가벼운 덤벨을 들고 손바닥을 앞쪽으로 향하게 하세요.',
+    get cue() {
+      return t('팔꿈치를 몸 옆에 두고 몸통 반동 없이 덤벨을 천천히 올려주세요.');
+    },
+    get setup() {
+      return t('양손에 가벼운 덤벨을 들고 손바닥을 앞쪽으로 향하게 하세요.');
+    },
   },
   tricepsPushdown: {
-    name: '케이블 삼두 푸시다운',
-    equipment: '머신',
-    region: '상체',
-    area: '삼두',
-    secondary: '코어',
-    pattern: '팔꿈치 펴기',
+    get name() {
+      return t('케이블 삼두 푸시다운');
+    },
+    get equipment() {
+      return t('머신');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('삼두');
+    },
+    get secondary() {
+      return t('코어');
+    },
+    get pattern() {
+      return t('팔꿈치 펴기');
+    },
     atlas: 18,
-    cue: '팔꿈치를 몸 옆에 고정하고 팔꿈치를 펴며 로프를 아래로 밀어주세요.',
-    setup: '도르래를 위쪽에 두고 로프를 연결하세요. 가벼운 무게로 시작하고 몸통 반동을 피하세요.',
+    get cue() {
+      return t('팔꿈치를 몸 옆에 고정하고 팔꿈치를 펴며 로프를 아래로 밀어주세요.');
+    },
+    get setup() {
+      return t(
+        '도르래를 위쪽에 두고 로프를 연결하세요. 가벼운 무게로 시작하고 몸통 반동을 피하세요.',
+      );
+    },
   },
   facePull: {
-    name: '케이블 페이스 풀',
-    equipment: '머신',
-    region: '상체',
-    area: '뒤쪽 어깨 · 등 위쪽',
-    secondary: '어깨 회전근',
-    pattern: '후면 어깨 당기기',
+    get name() {
+      return t('케이블 페이스 풀');
+    },
+    get equipment() {
+      return t('머신');
+    },
+    get region() {
+      return t('상체');
+    },
+    get area() {
+      return t('뒤쪽 어깨 · 등 위쪽');
+    },
+    get secondary() {
+      return t('어깨 회전근');
+    },
+    get pattern() {
+      return t('후면 어깨 당기기');
+    },
     atlas: 19,
-    cue: '로프를 얼굴 쪽으로 당기며 손을 벌려주세요. 허리를 젖히거나 어깨를 으쓱하지 마세요.',
-    setup:
-      '도르래를 얼굴 높이에 맞추고 로프를 연결하세요. 처음에는 직원에게 높이와 당기는 방향을 확인받으세요.',
+    get cue() {
+      return t(
+        '로프를 얼굴 쪽으로 당기며 손을 벌려주세요. 허리를 젖히거나 어깨를 으쓱하지 마세요.',
+      );
+    },
+    get setup() {
+      return t(
+        '도르래를 얼굴 높이에 맞추고 로프를 연결하세요. 처음에는 직원에게 높이와 당기는 방향을 확인받으세요.',
+      );
+    },
   },
   romanianDeadlift: {
-    name: '덤벨 루마니안 데드리프트',
-    equipment: '덤벨',
-    region: '하체',
-    area: '엉덩이 · 허벅지 뒤',
-    secondary: '척추기립근 · 코어',
-    pattern: '힙 힌지',
+    get name() {
+      return t('덤벨 루마니안 데드리프트');
+    },
+    get equipment() {
+      return t('덤벨');
+    },
+    get region() {
+      return t('하체');
+    },
+    get area() {
+      return t('엉덩이 · 허벅지 뒤');
+    },
+    get secondary() {
+      return t('척추기립근 · 코어');
+    },
+    get pattern() {
+      return t('힙 힌지');
+    },
     atlas: 20,
-    cue: '무릎을 살짝 굽힌 채 엉덩이를 뒤로 보내세요. 허리의 중립을 유지할 수 있는 범위까지만 내려가요.',
-    setup:
-      '가벼운 덤벨을 허벅지 앞에 들고 서세요. 바닥에 닿는 것이 목표가 아니며, 처음에는 힙 힌지 자세를 확인받으세요.',
+    get cue() {
+      return t(
+        '무릎을 살짝 굽힌 채 엉덩이를 뒤로 보내세요. 허리의 중립을 유지할 수 있는 범위까지만 내려가요.',
+      );
+    },
+    get setup() {
+      return t(
+        '가벼운 덤벨을 허벅지 앞에 들고 서세요. 바닥에 닿는 것이 목표가 아니며, 처음에는 힙 힌지 자세를 확인받으세요.',
+      );
+    },
   },
   crunch: {
-    name: '크런치',
-    equipment: '맨몸',
-    region: '코어',
-    area: '복근',
-    secondary: '복부 안정근',
-    pattern: '몸통 굽히기',
+    get name() {
+      return t('크런치');
+    },
+    get equipment() {
+      return t('맨몸');
+    },
+    get region() {
+      return t('코어');
+    },
+    get area() {
+      return t('복근');
+    },
+    get secondary() {
+      return t('복부 안정근');
+    },
+    get pattern() {
+      return t('몸통 굽히기');
+    },
     atlas: 21,
-    cue: '목을 당기지 않고 갈비뼈를 골반 쪽으로 가까이 하며 어깨를 조금 들어주세요.',
-    setup: '매트에 누워 무릎을 굽히고 발을 바닥에 둡니다. 팔은 가슴 앞에 교차하고 천천히 움직여요.',
+    get cue() {
+      return t('목을 당기지 않고 갈비뼈를 골반 쪽으로 가까이 하며 어깨를 조금 들어주세요.');
+    },
+    get setup() {
+      return t(
+        '매트에 누워 무릎을 굽히고 발을 바닥에 둡니다. 팔은 가슴 앞에 교차하고 천천히 움직여요.',
+      );
+    },
   },
 } as const;
 export type MachineId = keyof typeof machines;
@@ -292,6 +658,7 @@ export type PlanItem = {
   restOverride?: boolean;
 };
 export type Preferences = {
+  language?: 'en' | 'ko';
   level: Level;
   split: Split;
   starters: MachineId[];
@@ -381,19 +748,45 @@ const plans: Record<Routine, MachineId[]> = {
   shoulderArms: ['shoulderPress', 'lateralRaise', 'facePull', 'tricepsPushdown', 'dumbbellCurl'],
 };
 export const routineNames: Record<Routine, string> = {
-  fullA: '전신 A',
-  fullB: '전신 B',
-  upper: '상체',
-  lower: '하체',
-  push: '밀기',
-  pull: '당기기',
-  legs: '하체',
-  mixedA: '혼합 전신 A',
-  mixedB: '혼합 전신 B',
-  torso: '몸통',
-  limbs: '하체·팔',
-  chestBack: '가슴·등',
-  shoulderArms: '어깨·팔',
+  get fullA() {
+    return t('전신 A');
+  },
+  get fullB() {
+    return t('전신 B');
+  },
+  get upper() {
+    return t('상체');
+  },
+  get lower() {
+    return t('하체');
+  },
+  get push() {
+    return t('밀기');
+  },
+  get pull() {
+    return t('당기기');
+  },
+  get legs() {
+    return t('하체');
+  },
+  get mixedA() {
+    return t('혼합 전신 A');
+  },
+  get mixedB() {
+    return t('혼합 전신 B');
+  },
+  get torso() {
+    return t('몸통');
+  },
+  get limbs() {
+    return t('하체·팔');
+  },
+  get chestBack() {
+    return t('가슴·등');
+  },
+  get shoulderArms() {
+    return t('어깨·팔');
+  },
 };
 /** Upper bound on a user-defined cycle; the visit cards show at most this many. */
 export const MAX_CUSTOM_VISITS = 3;
@@ -493,7 +886,9 @@ export function planSeconds(items: PlanItem[]) {
   return planBreakdown(items).total;
 }
 function checkItems(items: PlanItem[]): void {
-  const shapeError = Error('종목은 1–12개, 세트 1–5개, 운동 20–180초, 휴식 30–180초로 설정하세요.');
+  const shapeError = Error(
+    t('종목은 1–12개, 세트 1–5개, 운동 20–180초, 휴식 30–180초로 설정하세요.'),
+  );
   if (
     !Array.isArray(items) ||
     items.length < 1 ||
@@ -541,7 +936,7 @@ export function withStarters(
         (x) => open(x) && machines[x.machine].area === machines[machine].area,
       );
     if (index < 0) index = result.findLastIndex(open);
-    if (index < 0) throw Error('시작 운동 수를 줄여주세요.');
+    if (index < 0) throw Error(t('시작 운동 수를 줄여주세요.'));
     replaced.push(result[index].machine);
     result[index] = { ...result[index], machine };
   }
@@ -789,22 +1184,30 @@ export function clearHistory(data: Data): Data {
 }
 export function phaseTitle(p: Phase | null) {
   return !p
-    ? '오늘 운동 완료'
+    ? t('오늘 운동 완료')
     : p.kind === 'prepare'
-      ? '10초 후 시작합니다'
+      ? t('10초 후 시작합니다')
       : p.kind === 'rest'
-        ? '잠깐, 쉬어가요'
+        ? t('잠깐, 쉬어가요')
         : p.kind === 'move'
-          ? `${machines[p.machine].name} 준비`
+          ? t('{0} 준비', machines[p.machine].name)
           : machines[p.machine].name;
 }
 export function announcement(p: Phase | null) {
-  if (!p) return '오늘 운동을 마쳤습니다. 수고하셨습니다.';
-  if (p.kind === 'prepare') return '운동을 시작하겠습니다. 10초 후 첫 번째 세트를 시작합니다.';
-  if (p.kind === 'move') return `사용한 기구를 정리하고 ${machines[p.machine].name}를 준비하세요.`;
+  if (!p) return t('오늘 운동을 마쳤습니다. 수고하셨습니다.');
+  if (p.kind === 'prepare') return t('운동을 시작하겠습니다. 10초 후 첫 번째 세트를 시작합니다.');
+  if (p.kind === 'move')
+    return t('사용한 기구를 정리하고 {0}를 준비하세요.', machines[p.machine].name);
   if (p.kind === 'rest')
-    return `세트가 끝났습니다. ${Math.ceil(p.seconds)}초 동안 쉬세요. 준비되면 다음 세트를 눌러주세요.`;
-  return `${machines[p.machine].name}, ${['', '첫', '두', '세', '네', '다섯'][p.set!]} 번째 세트를 시작하겠습니다.`;
+    return t(
+      '세트가 끝났습니다. {0}초 동안 쉬세요. 준비되면 다음 세트를 눌러주세요.',
+      Math.ceil(p.seconds),
+    );
+  return t(
+    '{0}, {1} 번째 세트를 시작하겠습니다.',
+    machines[p.machine].name,
+    ['', t('첫'), t('두'), t('세'), t('네'), t('다섯')][p.set!],
+  );
 }
 export function countdownCue(s: Session, now: number) {
   const p = position(s, now);

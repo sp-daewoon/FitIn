@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { Session, elapsedAt, announcement, phaseTitle, sessionLimit } from './workout';
@@ -13,7 +14,9 @@ export async function requestReminders() {
   if (Platform.OS === 'web') return false;
   if (Platform.OS === 'android')
     await Notifications.setNotificationChannelAsync('workout', {
-      name: '운동 안내',
+      get name() {
+        return t('운동 안내');
+      },
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
     });
@@ -62,8 +65,12 @@ export function syncReminders(session: Session | null, sound: boolean) {
       if (token === generation && end > elapsed)
         await Notifications.scheduleNotificationAsync({
           content: {
-            title: 'FitIn · 오늘 운동 종료',
-            body: '운동 기록을 확인해주세요. 자동 진행은 실제 수행과 별도로 기록돼요.',
+            get title() {
+              return t('FitIn · 오늘 운동 종료');
+            },
+            get body() {
+              return t('운동 기록을 확인해주세요. 자동 진행은 실제 수행과 별도로 기록돼요.');
+            },
             sound: sound ? 'default' : false,
           },
           trigger: {

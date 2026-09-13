@@ -19,6 +19,7 @@
   "devDependencies": {
     "@types/node": "^22.20.2",
     "@types/react": "~19.2.2",
+    "playwright": "^1.63.0",
     "prettier": "^3.9.6",
     "tsx": "^4.23.13",
     "typescript": "~6.0.3"
@@ -30,6 +31,8 @@
     "web": "expo start --web",
     "prototype": "python3 -m http.server 4173 --bind 127.0.0.1 --directory docs",
     "test": "tsx --test tests/*.test.ts",
+    "test:layout": "tsx scripts/check-session-layout.ts",
+    "test:rls": "bash scripts/check-supabase-rls.sh",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm test && npm run harness:check",
     "build:web": "expo export --platform web",

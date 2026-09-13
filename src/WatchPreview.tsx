@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ExerciseVisual } from './ExerciseVisual';
@@ -20,7 +21,7 @@ export function WatchPreview({
   const id = phase?.machine ?? fallback;
   return (
     <View style={s.wrap}>
-      <Text style={s.note}>Watch 화면 미리보기 · 실제 기기 미연결</Text>
+      <Text style={s.note}>{t('Watch 화면 미리보기 · 실제 기기 미연결')}</Text>
       <View style={s.watch}>
         <View style={StyleSheet.absoluteFill}>
           <ExerciseVisual machine={id} size={230} />
@@ -29,36 +30,36 @@ export function WatchPreview({
         <Text style={s.label}>{machines[id].name}</Text>
         <Text style={s.phase}>
           {session?.paused
-            ? '일시정지'
+            ? t('일시정지')
             : phase?.kind === 'rest'
-              ? '휴식'
+              ? t('휴식')
               : phase?.kind === 'move'
-                ? '다음 운동 준비'
+                ? t('다음 운동 준비')
                 : phase?.kind === 'prepare'
-                  ? '시작 준비'
+                  ? t('시작 준비')
                   : phase
-                    ? `${phase.set} / ${phase.sets} 세트`
-                    : '체크인 대기'}
+                    ? t('{0} / {1} 세트', phase.set, phase.sets)
+                    : t('체크인 대기')}
         </Text>
         <Text style={s.time}>{formatTime(p?.remaining ?? 0)}</Text>
         {phase && (
           <View style={s.buttons}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Watch 미리보기 일시정지 또는 재개"
+              accessibilityLabel={t('Watch 미리보기 일시정지 또는 재개')}
               onPress={() => onCommand(session!.paused ? 'resume' : 'pause')}
               style={s.button}
             >
-              <Text style={s.label}>{session!.paused ? '재개' : '정지'}</Text>
+              <Text style={s.label}>{session!.paused ? t('재개') : t('정지')}</Text>
             </Pressable>
             <Pressable
               disabled={session!.paused || phase.kind === 'prepare'}
               accessibilityRole="button"
-              accessibilityLabel="Watch 미리보기 다음 단계"
+              accessibilityLabel={t('Watch 미리보기 다음 단계')}
               onPress={() => onCommand('next')}
               style={s.button}
             >
-              <Text style={s.label}>다음</Text>
+              <Text style={s.label}>{t('다음')}</Text>
             </Pressable>
           </View>
         )}

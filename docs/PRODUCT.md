@@ -4,7 +4,7 @@ Current behavior follows the user's latest request in [routine expansion](releas
 
 ## Core service
 
-Offline gym coaching, iPhone first, React Native/TypeScript shared with web and Android. No login or backend. Durable local records; unreadable originals must never be overwritten. Machine-led full-body remains the first suggestion. Personal dumbbell preferences are optional, not universal defaults.
+Offline gym coaching, iPhone first, React Native/TypeScript shared with web and Android. The current app has no login/backend dependency. The user authorized optional Supabase accounts and private routine storage on 2026-09-13; see [the preparation plan](architecture/SUPABASE.md). Guest workouts and durable local records remain supported; unreadable originals must never be overwritten. Machine-led full-body remains the first suggestion. Personal dumbbell preferences are optional, not universal defaults.
 
 Check-in happens after warmup. Say “운동을 시작하겠습니다”, allow exactly 10 seconds, then announce the actual exercise and set ordinal. No warmup or extra first-machine transition. Automatic progression coexists with set completion, rest/transition skip, +30 seconds, pause and resume. Working-set seconds 5..1 beep. A work window is an editable estimate, not an instruction to rush or proof of performed exercise.
 
@@ -23,6 +23,8 @@ Templates permit 1–12 movements and 1–5 sets per movement. Global rest defau
 PPL keeps chest/shoulder/triceps, back/rear shoulder/biceps and legs/core coverage. Extra details expose movement purpose, repetition starting ranges, alternatives and weekly examples. These are editable examples awaiting content review; no guarantee of complete recovery or individualized effectiveness. Consistent major-muscle-group training and gradual progression are supported by [ACSM 2026](https://acsm.org/resistance-training-guidelines-update-2026/), which does not validate FitIn's exact set count or duration.
 
 ## Exercise guidance and platforms
+
+English is the default presentation language; settings can select Korean for UI, exercise guidance, speech and reminders. Stored exercise IDs and session progression are language independent. During sets, reserve space for changing headings/status/button labels so Korean line wrapping does not shift the exercise image or controls. Image frames cannot shrink with text content. Layout verification covers both languages, independently of physical iPhone verification.
 
 The 22-entry catalog contains nine machines/cables, five barbells, seven dumbbells and one bodyweight movement. Stable exercise IDs and atlas slots must survive expansion. Slots 0–17 use two 3×3 atlases; slots 18–21 use a 2×2 atlas. The dictionary offers equipment/name/muscle filters. Phone UI prioritizes recognizable equipment, body position and target muscles, then exercise/set and controls, with a smaller timer.
 

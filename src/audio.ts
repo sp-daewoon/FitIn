@@ -1,6 +1,7 @@
 import { createAudioPlayer, setAudioModeAsync, setIsAudioActiveAsync } from 'expo-audio';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
+import { localeTag } from './i18n';
 let player: ReturnType<typeof createAudioPlayer> | undefined;
 let release: ReturnType<typeof setTimeout> | undefined;
 let generation = 0;
@@ -14,7 +15,7 @@ export async function stopCues() {
 export async function speakCue(text: string) {
   await stopCues();
   // A separate iOS speech session lets the OS manage interruptions and music ducking.
-  Speech.speak(text, { language: 'ko-KR', rate: 0.94, useApplicationAudioSession: false });
+  Speech.speak(text, { language: localeTag(), rate: 0.94, useApplicationAudioSession: false });
   void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 }
 export async function beepCue() {
