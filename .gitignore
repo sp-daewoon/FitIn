@@ -46,3 +46,6 @@ supabase/.temp/
 # Generated validation output
 playwright-report/
 test-results/
+
+# Generated: last resolved environment, read by Xcode build phases
+.fitin.environment.json

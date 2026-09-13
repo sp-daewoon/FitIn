@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 import { spawn } from 'node:child_process';
-import { resolveEnvironment } from '../config/environment.cjs';
+import { persistEnvironment, resolveEnvironment } from '../config/environment.cjs';
 
 const [name, command, ...args] = process.argv.slice(2);
 if (!['development', 'production'].includes(name) || !command) {
@@ -15,7 +15,8 @@ if (existsSync('.env.development.local')) {
     readFileSync('.env.development.local', 'utf8'),
   ).EXPO_PUBLIC_SUPABASE_URL;
 }
-resolveEnvironment(env);
+// Cached so Xcode build phases, which run without this environment, resolve the same backend.
+persistEnvironment(resolveEnvironment(env));
 const child = spawn(command, args, { env, stdio: 'inherit', shell: false });
 child.on('error', (error) => {
   console.error(error.message);
