@@ -2,8 +2,6 @@
 
 Offline-first, machine-led gym coaching. React Native + TypeScript; iPhone first. After warming up, check in, prepare for 10 seconds, and follow a session of up to 40 active minutes. Explicit set completion, rest skipping, extra time and pause work through one common engine.
 
-**새로 합류한 사람은 [docs/CODEBASE.html](docs/CODEBASE.html)부터 보세요.** 브라우저로 열면 됩니다. 저장 구조, 실행 순서, 파일별 역할을 백엔드 개념에 대응시켜 설명합니다.
-
 **AI maintainers start at [AGENTS.md](AGENTS.md).** The primary development harness is [docs/AI_HARNESS.md](docs/AI_HARNESS.md): canonical product contracts, a reusable project skill, agent role instructions, behavioral regression tests, CI and truthful release-readiness gates.
 
 ## Run

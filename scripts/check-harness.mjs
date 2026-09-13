@@ -12,6 +12,34 @@ export function readinessFailures(readiness, assets) {
     ...assets.assets.filter((x) => x.status !== 'verified').map((x) => x.file),
   ];
 }
+/**
+ * Documents under `docs/` are one of two kinds, and the difference matters to a reader who arrives
+ * later. A **contract** states a rule that holds until the rule itself changes; it carries no date
+ * and is rewritten in place. A **snapshot** describes how things were at one moment; it must say
+ * which moment, because code moves and an undated description of "how it works now" rots silently
+ * while still reading as authoritative. Release notes under `docs/releases/` are pinned by their
+ * filename and need no stamp. The prototype files are imported data, not documentation.
+ */
+export const contractDocs = new Set([
+  'docs/AI_HARNESS.md',
+  'docs/PRODUCT.md',
+  'docs/RELEASES.md',
+  'docs/architecture/HEALTH.md',
+  'docs/architecture/IOS_BUILD.md',
+  'docs/architecture/PLATFORMS.md',
+  'docs/architecture/SESSION.md',
+]);
+const notDocumentation = new Set(['docs/prototype.html', 'docs/prototype.js']);
+export function undatedSnapshots(files) {
+  return files
+    .filter(
+      (x) =>
+        !contractDocs.has(x.path) &&
+        !notDocumentation.has(x.path) &&
+        !/20\d{2}-\d{2}-\d{2}/.test(x.head),
+    )
+    .map((x) => x.path);
+}
 export function checkHarness(base = root, release = false) {
   const errors = [];
   const requireFile = (p) => {
@@ -67,6 +95,23 @@ export function checkHarness(base = root, release = false) {
       if (!existsSync(target)) errors.push(`Broken link: ${relative(base, file)} -> ${link}`);
     }
   }
+  // A document that describes the current code without saying when it was written reads like a
+  // rule and ages like a photograph. Either state a rule, or stamp the moment being described.
+  const surfaced = ['docs', 'docs/architecture'].flatMap((folder) =>
+    readdirSync(resolve(base, folder), { withFileTypes: true })
+      .filter((e) => e.isFile() && /\.(md|html)$/.test(e.name))
+      .map((e) => ({
+        path: `${folder}/${e.name}`,
+        head: readFileSync(resolve(base, folder, e.name), 'utf8')
+          .split('\n')
+          .slice(0, 8)
+          .join('\n'),
+      })),
+  );
+  for (const path of undatedSnapshots(surfaced))
+    errors.push(
+      `Undated snapshot document: ${path}. Stamp the date and commit it describes, or add it to contractDocs if it states a rule.`,
+    );
   const readiness = JSON.parse(readFileSync(resolve(base, 'docs/release-readiness.json'), 'utf8'));
   const assets = JSON.parse(readFileSync(resolve(base, 'assets/exercises/manifest.json'), 'utf8'));
   const checkIds = new Set();

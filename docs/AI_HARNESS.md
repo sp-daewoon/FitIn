@@ -15,6 +15,16 @@ User request → inspect actual git state → read product + latest handoff → 
 
 Current user instructions win over old project decisions. Record material changes once in the product/architecture documents, then align tests. A reference image or an old prototype cannot override that contract. A task-specific example (e.g. dumbbell starter) must not become a global default.
 
+## Two kinds of document
+
+A **contract** states a rule that holds until the rule itself changes. It carries no date, is rewritten in place, and is the thing a reader is allowed to rely on: [AGENTS.md](../AGENTS.md), [PRODUCT.md](PRODUCT.md), [RELEASES.md](RELEASES.md) and the files under `architecture/`.
+
+A **snapshot** describes how something was at one moment: the current handoff, build evidence, a release note, a walkthrough of the code as it stands. It must name the moment it describes. An undated description of how the code works today reads exactly like a rule and ages like a photograph; the next reader cannot tell which one they are holding, and nothing in the repository will tell them it went stale.
+
+So: state a rule, or stamp the moment. A point-in-time explanation belongs in a release note under `releases/`, or nowhere at all, since `git show <commit>:<path>` already gives any past state exactly. Do not promote a snapshot as the starting point for understanding the codebase.
+
+`checkHarness` enforces this. Every Markdown or HTML file directly under `docs/` and `docs/architecture/` must either appear in the `contractDocs` allowlist or carry a date in its first eight lines. Adding a document is therefore a deliberate choice between the two kinds.
+
 ## What is mechanically checked
 
 `npm run check` runs:

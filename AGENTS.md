@@ -22,6 +22,7 @@ Applies to this repository and every AI working in it. The latest explicit user 
 - App, Watch and headphone inputs must use the same guarded command engine. No separate timer/reducer in a client adapter.
 - The app prioritizes exercise/machine imagery and target muscles. Timer-first UI is appropriate for the future watch surface, not the phone.
 - Watch/AirPods connection, external music ducking and locked-screen behavior are **not verified by web/unit tests**. Never mark a simulated input as a connected device.
+- A document either states a rule or describes a moment, never both. A contract in `docs/` carries no date and is rewritten in place when the rule changes. Anything describing how the code currently works is a snapshot: stamp the date and commit it describes, or do not add it. Git history and release notes are where point-in-time explanations belong. Never present a snapshot as a starting point for understanding the code, because it keeps reading as authoritative long after it stops being true.
 - Generation is not anatomical validation. Image assets stay `draft` until qualified review; do not publish reference screenshots or remove watermarks.
 
 ## Required completion procedure
