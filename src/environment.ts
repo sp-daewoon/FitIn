@@ -6,4 +6,8 @@ export const backend = {
   publishableKey:
     typeof extra?.backend?.publishableKey === 'string' ? extra.backend.publishableKey : '',
 };
+/** Empty until an iOS OAuth client is configured; the browser flow is used until then. */
+export const google = {
+  iosClientId: typeof extra?.google?.iosClientId === 'string' ? extra.google.iosClientId : '',
+};
 export const appScheme = environment === 'production' ? 'fitin' : 'fitin-dev';

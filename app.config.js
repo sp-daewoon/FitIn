@@ -11,6 +11,18 @@ module.exports = ({ config }) => {
   version: process.env.FITIN_PLATFORM === 'ios' ? versions.ios.version : process.env.FITIN_PLATFORM === 'android' ? versions.android.version : config.version,
   ios: { ...config.ios, bundleIdentifier: environment.appId, buildNumber: String(versions.ios.build) },
   android: { ...config.android, package: environment.appId, versionCode: versions.android.build },
-  extra: { ...config.extra, environment: environment.name, backend: { url: environment.url, publishableKey: environment.key } },
+  // The plugin is only added when an iOS client is configured; without it the browser flow stays.
+  plugins: environment.googleUrlScheme
+    ? [
+        ...(config.plugins ?? []),
+        ['@react-native-google-signin/google-signin', { iosUrlScheme: environment.googleUrlScheme }],
+      ]
+    : config.plugins,
+  extra: {
+    ...config.extra,
+    environment: environment.name,
+    backend: { url: environment.url, publishableKey: environment.key },
+    google: { iosClientId: environment.googleIosClientId },
+  },
 });
 };
