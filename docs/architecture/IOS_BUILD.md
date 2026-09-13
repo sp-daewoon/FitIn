@@ -19,6 +19,14 @@ Run prebuild and CocoaPods sequentially. Prebuild may recreate the native direct
 
 For a real iPhone: connect by USB, trust this Mac, enable Developer Mode, and make the phone reachable in `xcrun devicectl list devices`. Use `FITIN_PLATFORM=ios npx expo run:ios --device --configuration Release` with an available Apple development signing team/profile. No certificate or provisioning secret belongs in Git. Simulator success does not imply real-device signing, installation, background speech or AirPods acceptance.
 
+## 개인 Apple 팀으로 실기기에 올리기
+
+무료 개인 팀은 Sign in with Apple 기능을 프로비저닝할 수 없어 Xcode가 기기 빌드를 거부한다. `npm run prebuild:ios:personal`은 `FITIN_PERSONAL_TEAM=1`로 prebuild를 실행해 해당 엔타이틀먼트를 빼고, 개인 팀 서명이 통과하게 한다. 실행할 때 경고를 출력한다.
+
+그 빌드에서는 **Apple 로그인이 동작하지 않는다.** Google 로그인과 둘러보기는 정상이다. 플래그는 `FITIN_ENV=production`이면 무시되므로 운영 빌드에서 기능이 사라질 수 없다.
+
+이건 임시 우회이지 해결이 아니다. Apple 로그인, TestFlight, App Store 배포는 모두 유료 Apple Developer Program 가입이 필요하다. 가입 후에는 `npm run prebuild:ios`로 다시 생성해 엔타이틀먼트를 되살린다. 시뮬레이터 빌드는 프로비저닝이 필요 없으므로 플래그 없이 그대로 쓸 수 있다.
+
 The `with-local-notifications` config plugin must precede `expo-notifications`: Expo runs entitlement mods in reverse registration order. It removes the unused APNs entitlement, enabling personal-team signing while retaining local reminders. Inspect the generated entitlements after changing plugins; remote push is not part of this offline app.
 
 watchOS requires its own native companion target and connectivity implementation; the in-app Watch preview is not an installable Watch app. HealthKit is still planned.

@@ -50,7 +50,9 @@
     "harness:check": "node scripts/check-harness.mjs",
     "release:check": "node scripts/check-harness.mjs --release",
     "format": "prettier --write App.tsx src tests scripts",
-    "format:check": "prettier --check App.tsx src tests scripts"
+    "format:check": "prettier --check App.tsx src tests scripts",
+    "prebuild:ios": "FITIN_PLATFORM=ios node scripts/with-environment.mjs development npx expo prebuild --platform ios --clean --no-install",
+    "prebuild:ios:personal": "FITIN_PERSONAL_TEAM=1 FITIN_PLATFORM=ios node scripts/with-environment.mjs development npx expo prebuild --platform ios --clean --no-install"
   },
   "private": true,
   "engines": {
