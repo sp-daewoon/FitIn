@@ -6,7 +6,24 @@ import { SignInScreen } from './src/screens/SignInScreen';
 import { View, ActivityIndicator } from 'react-native';
 function Entry() {
   const auth = useAuth();
-  if (!auth.ready) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator /></View>;
-  return auth.entry === 'login' ? <SignInScreen /> : <WorkoutShell key={auth.account?.id ?? 'guest'} />;
+  if (!auth.ready)
+    return (
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  return auth.entry === 'login' ? (
+    <SignInScreen />
+  ) : (
+    <WorkoutShell key={auth.account?.id ?? 'guest'} />
+  );
 }
-export default function App(){return <SafeAreaProvider><AuthProvider><Entry /></AuthProvider></SafeAreaProvider>;}
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AuthProvider>
+        <Entry />
+      </AuthProvider>
+    </SafeAreaProvider>
+  );
+}

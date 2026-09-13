@@ -2,28 +2,39 @@ import { t } from '../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-
 import { useWorkout } from '../useWorkout';
 import { useAuth } from '../auth/AuthContext';
 import { useCloudBackup } from '../sync/useCloudBackup';
 import { ExerciseVisual } from '../ExerciseVisual';
 
-
-
-
-
-
 import { repetitionGuide } from '../programGuidance';
 
-import { recommendedPlan as defaultPlan, sessionLimit, DEFAULT_WORK, MachineId, machines, markRestOverrides, nextRoutine, PlanItem, planBreakdown, planSeconds, routineNames, resolvePlan, Routine, Split, validateTemplate, withStarters } from '../workout';
+import {
+  recommendedPlan as defaultPlan,
+  sessionLimit,
+  DEFAULT_WORK,
+  MachineId,
+  machines,
+  markRestOverrides,
+  nextRoutine,
+  PlanItem,
+  planBreakdown,
+  planSeconds,
+  routineNames,
+  resolvePlan,
+  Routine,
+  Split,
+  validateTemplate,
+  withStarters,
+} from '../workout';
 import { s } from './styles';
 
-export function useWorkoutController(){
-const auth = useAuth();
-const w = useWorkout(auth.account?.id ?? 'guest');
-const cloud = useCloudBackup(w.data, w.persistedData, document => {
-  w.setData(d => ({ ...d, preferences: document.preferences, history: document.history }));
-});
+export function useWorkoutController() {
+  const auth = useAuth();
+  const w = useWorkout(auth.account?.id ?? 'guest');
+  const cloud = useCloudBackup(w.data, w.persistedData, (document) => {
+    w.setData((d) => ({ ...d, preferences: document.preferences, history: document.history }));
+  });
   const { data, p } = w;
   const [tab, setTab] = useState<'today' | 'plan' | 'library' | 'history' | 'settings' | 'harness'>(
       'today',
@@ -207,6 +218,63 @@ const cloud = useCloudBackup(w.data, w.persistedData, document => {
       </Pressable>
     </View>
   );
-  
-return {auth,cloud,w,data,p,tab,setTab,items,setItems,edit,setEdit,personal,setPersonal,draft,setDraft,replace,setReplace,append,setAppend,appendRepeat,setAppendRepeat,guide,setGuide,stopConfirm,setStopConfirm,removing,setRemoving,notice,setNotice,width,fontScale,wide,page,session,routine,selected,setSelected,machine,m,planError,total,parts,sessionDuration,remaining,upcoming,reorder,bounds,change,addToday,saveTemplate,resetTemplate,savePlan,chooseRoutine,openExternal,applyPersonal,visual};
+
+  return {
+    auth,
+    cloud,
+    w,
+    data,
+    p,
+    tab,
+    setTab,
+    items,
+    setItems,
+    edit,
+    setEdit,
+    personal,
+    setPersonal,
+    draft,
+    setDraft,
+    replace,
+    setReplace,
+    append,
+    setAppend,
+    appendRepeat,
+    setAppendRepeat,
+    guide,
+    setGuide,
+    stopConfirm,
+    setStopConfirm,
+    removing,
+    setRemoving,
+    notice,
+    setNotice,
+    width,
+    fontScale,
+    wide,
+    page,
+    session,
+    routine,
+    selected,
+    setSelected,
+    machine,
+    m,
+    planError,
+    total,
+    parts,
+    sessionDuration,
+    remaining,
+    upcoming,
+    reorder,
+    bounds,
+    change,
+    addToday,
+    saveTemplate,
+    resetTemplate,
+    savePlan,
+    chooseRoutine,
+    openExternal,
+    applyPersonal,
+    visual,
+  };
 }

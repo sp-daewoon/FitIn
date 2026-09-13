@@ -4,13 +4,9 @@ import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
-
 import { ExerciseLibrary } from '../ExerciseLibrary';
 
-
-
 import versions from '../../docs/releases/versions.json';
-
 
 import { Harness } from '../Harness';
 import { formatTime } from '../workout';
@@ -24,7 +20,21 @@ import { SettingsScreen } from './SettingsScreen';
 import { WorkoutDialogs } from './WorkoutDialogs';
 import { WorkoutUIProvider } from '../ui/WorkoutContext';
 import { useWorkoutController } from '../ui/useWorkoutController';
-function Shell(){ const {w, tab, setTab, setGuide, setStopConfirm, notice, setNotice, wide, page, session, selected} = useWorkoutUI(); return ((
+function Shell() {
+  const {
+    w,
+    tab,
+    setTab,
+    setGuide,
+    setStopConfirm,
+    notice,
+    setNotice,
+    wide,
+    page,
+    session,
+    selected,
+  } = useWorkoutUI();
+  return (
     <SafeAreaView style={s.safe}>
       <StatusBar style="dark" />
       <ScrollView ref={page} contentContainerStyle={[s.container, wide && s.desktop]}>
@@ -142,6 +152,13 @@ function Shell(){ const {w, tab, setTab, setGuide, setStopConfirm, notice, setNo
       </ScrollView>
       <WorkoutDialogs />
     </SafeAreaView>
-  )); }
-export function WorkoutShell(){ const ui=useWorkoutController(); return <WorkoutUIProvider value={ui}><Shell /></WorkoutUIProvider>; }
-
+  );
+}
+export function WorkoutShell() {
+  const ui = useWorkoutController();
+  return (
+    <WorkoutUIProvider value={ui}>
+      <Shell />
+    </WorkoutUIProvider>
+  );
+}

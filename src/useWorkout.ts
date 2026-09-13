@@ -62,7 +62,10 @@ export function useWorkout(owner = 'guest') {
   useEffect(() => {
     if (!ready) return;
     void save(data, owner)
-      .then(() => { setSaveFailed(false); setPersistedData(data); })
+      .then(() => {
+        setSaveFailed(false);
+        setPersistedData(data);
+      })
       .catch(() => {
         setSaveFailed(true);
         setError(t('저장에 실패했어요. 앱을 닫기 전에 저장을 다시 시도해주세요.'));
@@ -153,7 +156,9 @@ export function useWorkout(owner = 'guest') {
     try {
       const time = Date.now();
       setNow(time);
-      setData((d) => (d.session ? d : { ...d, session: begin(routine, items, time, Crypto.randomUUID()) }));
+      setData((d) =>
+        d.session ? d : { ...d, session: begin(routine, items, time, Crypto.randomUUID()) },
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : t('운동을 시작하지 못했어요.'));
     } finally {

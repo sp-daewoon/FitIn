@@ -1,18 +1,5 @@
-
 import React from 'react';
 import { Pressable, Text, useWindowDimensions } from 'react-native';
-
-
-
-
-
-
-
-
-
-
-
-
 
 import { s } from './styles';
 export function Button({

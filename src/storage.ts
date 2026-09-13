@@ -10,10 +10,11 @@ export const PREVIOUS_KEYS = ['fitin.v3', 'fitin.v2', 'fitin.v1'];
  * decode failure or a rollback still finds the original record.
  */
 export async function loadData(owner = 'guest'): Promise<{ data: Data; legacy: boolean }> {
-  const scoped = await AsyncStorage.getItem(dataKey(environment,owner));
+  const scoped = await AsyncStorage.getItem(dataKey(environment, owner));
   if (scoped) return { data: decode(scoped), legacy: false };
   // Only the development guest workspace can import the old unscoped local app.
-  if (owner !== 'guest' || environment !== 'development') return { data: structuredClone(emptyData), legacy: false };
+  if (owner !== 'guest' || environment !== 'development')
+    return { data: structuredClone(emptyData), legacy: false };
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (raw) return { data: decode(raw), legacy: false };
   for (const key of ['fitin.v3', 'fitin.v2']) {
@@ -29,7 +30,7 @@ let writes = Promise.resolve();
 export function save(data: Data, owner = 'guest') {
   const result = writes
     .catch(() => {})
-    .then(() => AsyncStorage.setItem(dataKey(environment,owner), JSON.stringify(data)));
+    .then(() => AsyncStorage.setItem(dataKey(environment, owner), JSON.stringify(data)));
   writes = result;
   return result;
 }
