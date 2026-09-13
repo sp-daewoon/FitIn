@@ -22,7 +22,11 @@ export function authError(error: unknown): string {
   if (owner === 'google') return a('useGoogle');
   if (owner === 'apple') return a('useApple');
   if (owner) return a('existing');
-  return error instanceof Error && !('code' in error) ? error.message : a('failed');
+  // Show what actually went wrong. Collapsing every backend error into one generic sentence made a
+  // configuration problem, a blocked provider and a network failure look identical on screen, and
+  // the real cause was only reachable through server logs.
+  const detail = [e.message, e.code].filter(Boolean).join(' · ');
+  return detail ? `${a('failed')}\n${detail}` : a('failed');
 }
 const callbackUrl = () =>
   Platform.OS === 'web' ? `${window.location.origin}/` : `${appScheme}://auth/callback`;
