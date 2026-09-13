@@ -25,6 +25,8 @@ For a real iPhone: connect by USB, trust this Mac, enable Developer Mode, and ma
 
 그 빌드에서는 **Apple 로그인이 동작하지 않는다.** Google 로그인과 둘러보기는 정상이다. 플래그는 `FITIN_ENV=production`이면 무시되므로 운영 빌드에서 기능이 사라질 수 없다.
 
+`prebuild`는 네이티브 프로젝트를 새로 만들기 때문에 Xcode에서 골라둔 서명 팀이 매번 지워지고, 그대로 빌드하면 "Signing requires a development team"으로 실패한다. `.env.development.local`의 `FITIN_APPLE_TEAM_ID`에 팀 ID를 넣어두면 플러그인이 매 prebuild마다 복원한다. 비밀값은 아니지만 계정을 식별하므로 저장소에 커밋하지 않는다.
+
 이건 임시 우회이지 해결이 아니다. Apple 로그인, TestFlight, App Store 배포는 모두 유료 Apple Developer Program 가입이 필요하다. 가입 후에는 `npm run prebuild:ios`로 다시 생성해 엔타이틀먼트를 되살린다. 시뮬레이터 빌드는 프로비저닝이 필요 없으므로 플래그 없이 그대로 쓸 수 있다.
 
 The `with-local-notifications` config plugin must precede `expo-notifications`: Expo runs entitlement mods in reverse registration order. It removes the unused APNs entitlement, enabling personal-team signing while retaining local reminders. Inspect the generated entitlements after changing plugins; remote push is not part of this offline app.

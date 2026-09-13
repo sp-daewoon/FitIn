@@ -21,11 +21,18 @@ module.exports = (config) => {
     }
     return config;
   });
+  // Regenerating the native project wipes the team chosen in Xcode, so every prebuild otherwise
+  // fails with "Signing requires a development team" until someone reopens the editor and picks it
+  // again. FITIN_APPLE_TEAM_ID restores it automatically. It is read from the environment rather
+  // than committed, because it identifies an Apple account and belongs in the local env file.
+  const team = process.env.FITIN_APPLE_TEAM_ID;
   return withXcodeProject(config, (config) => {
     const sections = config.modResults.pbxXCBuildConfigurationSection();
     for (const entry of Object.values(sections)) {
-      if (entry && typeof entry === 'object' && 'buildSettings' in entry)
+      if (entry && typeof entry === 'object' && 'buildSettings' in entry) {
         entry.buildSettings.ENABLE_USER_SCRIPT_SANDBOXING = 'NO';
+        if (team) entry.buildSettings.DEVELOPMENT_TEAM = team;
+      }
     }
     return config;
   });

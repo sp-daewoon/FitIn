@@ -1,4 +1,7 @@
-const APP_IDS = { development: 'com.fitin.app.dev', production: 'com.fitin.app' };
+// com.fitin.app was already registered to another Apple developer account, so the second segment
+// carries an owner-specific token to guarantee a unique identifier. Production is permanent once
+// the app is submitted; until then it can still change.
+const APP_IDS = { development: 'com.spong.fitin.dev', production: 'com.spong.fitin' };
 function resolveEnvironment(env = process.env) {
   const name = env.FITIN_ENV || 'development';
   if (!Object.hasOwn(APP_IDS, name)) throw new Error('FITIN_ENV must be development or production');
