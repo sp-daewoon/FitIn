@@ -5,6 +5,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from './client';
 import { authError, authLinking, completeCallback, providerAvailability } from './operations';
 import { environment } from '../environment';
+import { loadLanguage } from '../languagePreference';
 
 type Entry = 'login' | 'guest' | 'account';
 type Account = { id: string; email: string };
@@ -20,9 +21,12 @@ function useAuthState() {
     let alive = true;
     void (async () => {
       try {
+        // Applied before the first screen so sign-in and settings never disagree.
+        await loadLanguage();
+        // Exploring is deliberately not remembered: only a signed-in account skips the sign-in
+        // screen. The guest's workout data stays on the device either way.
         const raw = await AsyncStorage.getItem(entryKey);
-        if (raw === 'guest' && alive) setEntry('guest');
-        else if (raw) {
+        if (raw && raw !== 'guest') {
           const saved = JSON.parse(raw);
           if (
             typeof saved.id === 'string' &&
@@ -92,7 +96,8 @@ function useAuthState() {
   async function explore() {
     const result = await supabase?.auth.signOut({ scope: 'local' });
     if (result?.error) throw result.error;
-    await AsyncStorage.setItem(entryKey, 'guest');
+    // Nothing is written: the next launch shows the sign-in screen again.
+    await AsyncStorage.removeItem(entryKey);
     setSession(null);
     setAccount(null);
     setEntry('guest');

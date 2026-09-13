@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { environment } from '../environment';
 import { dataKey } from '../storageKeys';
 import { Data } from '../workout';
-import { setLanguage } from '../i18n';
+import { saveLanguage } from '../languagePreference';
 import { BackupDocument, documentOf, equal, readDocument, reconcileDocuments } from './document';
 
 type Remote = { document: BackupDocument; revision: number };
@@ -94,7 +94,8 @@ export function useCloudBackup(
       if (!active() || !equal(local, documentOf(latest.current.data))) return;
       if (!equal(target, local)) {
         // Persist through the workout owner first; record the new base only on the next successful local write.
-        setLanguage(target.preferences.language ?? 'en');
+        // Through the device store, so the sign-in screen and settings keep agreeing.
+        void saveLanguage(target.preferences.language ?? 'en');
         latest.current.apply(target);
         setReview(null);
         setStatus('pending');

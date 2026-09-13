@@ -5,7 +5,8 @@ import { Button } from '../ui/Button';
 import { useAuth } from '../auth/AuthContext';
 import { authError, socialSignIn } from '../auth/operations';
 import { a } from '../locales/accounts';
-import { getLanguage, setLanguage } from '../i18n';
+import { getLanguage } from '../i18n';
+import { saveLanguage } from '../languagePreference';
 import { environment } from '../environment';
 
 /**
@@ -43,9 +44,9 @@ export function SignInScreen() {
             style={styles.language}
             onPress={() => {
               const next = language === 'en' ? 'ko' : 'en';
-              setLanguage(next);
               updateLanguage(next);
               setMessage('');
+              void saveLanguage(next);
             }}
           >
             <Text>{language === 'en' ? '한국어' : 'English'}</Text>

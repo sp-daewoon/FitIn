@@ -2,6 +2,7 @@ import { t } from './i18n';
 import { getLanguage } from './i18n';
 import * as Crypto from 'expo-crypto';
 import { Language, setLanguage } from './i18n';
+import { chosenLanguage, saveLanguage } from './languagePreference';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import {
@@ -41,14 +42,25 @@ export function useWorkout(owner = 'guest') {
   useEffect(() => {
     loadData(owner)
       .then(({ data, legacy }) => {
-        setLanguage(data.preferences.language ?? getLanguage());
+        // One source of truth for the display language. A choice made on the sign-in screen is
+        // stored on the device and wins, and it is mirrored into preferences so the settings
+        // screen shows the same value and the choice reaches other devices through sync. With no
+        // device choice yet, an account's stored language is adopted and kept.
+        const device = chosenLanguage();
+        const language = device ?? data.preferences.language ?? getLanguage();
+        setLanguage(language);
+        if (!device) void saveLanguage(language);
+        const loaded =
+          data.preferences.language === language
+            ? data
+            : { ...data, preferences: { ...data.preferences, language } };
         // Cold start only: a backgrounded app never reaches this. If a session was left running
         // while the process was dead, freeze the gap out and let the user say what happened.
         const time = Date.now();
-        const check = data.session ? reconcileOnLaunch(data.session, time) : null;
+        const check = loaded.session ? reconcileOnLaunch(loaded.session, time) : null;
         if (check?.excluded) setInterrupted(Math.round(check.excluded));
         setNow(time);
-        setData(check ? { ...data, session: check.session } : data);
+        setData(check ? { ...loaded, session: check.session } : loaded);
         setReady(true);
         if (legacy)
           setError(
@@ -201,7 +213,8 @@ export function useWorkout(owner = 'guest') {
   return {
     persistedData,
     changeLanguage: (language: Language) => {
-      setLanguage(language);
+      // Persisted on the device as well, so the sign-in screen opens in the same language.
+      void saveLanguage(language);
       void stopCues().catch(() => {});
       setError('');
       setData((d) => ({ ...d, preferences: { ...d.preferences, language } }));

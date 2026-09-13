@@ -33,9 +33,11 @@ export function SettingsScreen() {
           label={t('분할·루틴 설정은 내 루틴에서 →')}
           onPress={() => setTab('plan')}
         />
+        {/* Account is a shipped feature, not a development placeholder. It sat inside the __DEV__
+            block below, so release builds had no way back to the sign-in screen. */}
+        <AccountSettings />
         {__DEV__ && (
           <>
-            <AccountSettings />
             <WatchPreview session={session} now={w.now} fallback={machine} onCommand={w.command} />
             <Text style={s.section}>{t('Apple 건강')}</Text>
             <Text style={s.liveBadge}>{t('iPhone 연동 준비 중 · 현재 미연결')}</Text>
