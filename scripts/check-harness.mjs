@@ -27,6 +27,7 @@ export const contractDocs = new Set([
   'docs/architecture/HEALTH.md',
   'docs/architecture/IOS_BUILD.md',
   'docs/architecture/PLATFORMS.md',
+  'docs/architecture/SOCIAL_LOGIN_SETUP.md',
   'docs/architecture/SESSION.md',
 ]);
 const notDocumentation = new Set(['docs/prototype.html', 'docs/prototype.js']);
