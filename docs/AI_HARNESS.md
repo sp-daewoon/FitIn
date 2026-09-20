@@ -5,7 +5,7 @@ The harness is the repository's durable operating context for whichever AI edits
 ## Entry points and roles
 
 - Canonical entry: [AGENTS.md](../AGENTS.md).
-- Discoverable repository skill: [.agents/skills/fitin-maintenance/SKILL.md](../.agents/skills/fitin-maintenance/SKILL.md). Codex-like skill loaders can discover it; any other agent can read the same Markdown directly.
+- Discoverable repository skill: [.agents/skills/fitin-maintenance/SKILL.md](../.agents/skills/fitin-maintenance/SKILL.md). Exercise illustrations have their own: [.agents/skills/fitin-exercise-art/SKILL.md](../.agents/skills/fitin-exercise-art/SKILL.md). Codex-like skill loaders can discover it; any other agent can read the same Markdown directly.
 - Thin tool entrypoints: [CLAUDE.md](../CLAUDE.md), [.github/copilot-instructions.md](../.github/copilot-instructions.md). These route to one source rather than duplicating rules.
 - Role prompts: [implementer](../.agents/roles/implementer.md), [reviewer](../.agents/roles/reviewer.md), [handoff](../.agents/roles/handoff.md). These are explicit portable agent instructions, not an installed background service or proof that an independent reviewer ran.
 
@@ -31,6 +31,7 @@ So: state a rule, or stamp the moment. A point-in-time explanation belongs in a 
 1. TypeScript check across app/core/tests.
 2. Node behavior tests: session transitions, active-time cap, remote command guards, personalization, storage decoding.
 3. Harness consistency check: required entrypoints, unique requirement IDs, existing code/test/document references, valid readiness records, and resolvable local Markdown links.
+4. Atlas geometry: every exercise has a measured image rectangle, no two figures overlap, and the stored rectangles still match the images. Generated art is not trusted to sit on an even grid.
 
 `npm run build:web` checks that the actual React app and its local assets bundle. CI runs both on push/PR. It does not certify visual quality or native support.
 

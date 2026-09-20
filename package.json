@@ -31,6 +31,7 @@
     "@types/react": "~19.2.2",
     "pg": "^8.23.0",
     "playwright": "^1.63.0",
+    "pngjs": "^7.0.0",
     "prettier": "^3.9.6",
     "tsx": "^4.23.13",
     "typescript": "~6.0.3"
@@ -45,7 +46,7 @@
     "test:layout": "tsx scripts/check-session-layout.ts",
     "test:rls": "bash scripts/check-supabase-rls.sh",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm test && npm run harness:check",
+    "check": "npm run typecheck && npm test && npm run check:atlas && npm run harness:check",
     "build:web": "node scripts/with-environment.mjs development expo export --platform web",
     "build:web:production": "node scripts/with-environment.mjs production expo export --platform web",
     "harness:check": "node scripts/check-harness.mjs",
@@ -53,7 +54,8 @@
     "format": "prettier --write App.tsx src tests scripts",
     "format:check": "prettier --check App.tsx src tests scripts",
     "prebuild:ios": "FITIN_PLATFORM=ios node scripts/with-environment.mjs development npx expo prebuild --platform ios --clean --no-install",
-    "prebuild:ios:personal": "FITIN_PERSONAL_TEAM=1 FITIN_PLATFORM=ios node scripts/with-environment.mjs development npx expo prebuild --platform ios --clean --no-install"
+    "prebuild:ios:personal": "FITIN_PERSONAL_TEAM=1 FITIN_PLATFORM=ios node scripts/with-environment.mjs development npx expo prebuild --platform ios --clean --no-install",
+    "check:atlas": "node scripts/measure-atlas.mjs --check"
   },
   "private": true,
   "engines": {

@@ -5,26 +5,192 @@
       "file": "assets/exercises/atlas-v2-draft.png",
       "origin": "OpenAI image generation, original atlas, 2026-09-12",
       "status": "draft",
-      "layout": "3 equal columns by 3 equal rows; runtime clipping",
-      "cells": ["chestPress","latPulldown","row","legPress","legCurl","legExtension","shoulderPress","reverseGrip","pecDeck"],
-      "reviewRequired": "Anatomical accuracy, seated leg-curl roller placement, reverse grip, equipment geometry, muscle emphasis and clipping. Not approved exercise instruction."
+      "layout": "3 rough columns by 3 rough rows. The generator did not keep figures inside equal cells, so the app positions each one from the measured rectangle in `frames` rather than clipping on a grid. Re-run scripts/measure-atlas.mjs after any change to this image.",
+      "cells": [
+        "chestPress",
+        "latPulldown",
+        "row",
+        "legPress",
+        "legCurl",
+        "legExtension",
+        "shoulderPress",
+        "reverseGrip",
+        "pecDeck"
+      ],
+      "reviewRequired": "Anatomical accuracy, seated leg-curl roller placement, reverse grip, equipment geometry, muscle emphasis and clipping. Not approved exercise instruction.",
+      "imageSize": 1254,
+      "frames": {
+        "chestPress": [
+          54,
+          18,
+          375,
+          417
+        ],
+        "latPulldown": [
+          486,
+          3,
+          777,
+          417
+        ],
+        "row": [
+          891,
+          18,
+          1218,
+          408
+        ],
+        "legPress": [
+          18,
+          444,
+          441,
+          816
+        ],
+        "legCurl": [
+          480,
+          423,
+          783,
+          804
+        ],
+        "legExtension": [
+          903,
+          426,
+          1218,
+          804
+        ],
+        "shoulderPress": [
+          57,
+          825,
+          390,
+          1224
+        ],
+        "reverseGrip": [
+          522,
+          816,
+          753,
+          1215
+        ],
+        "pecDeck": [
+          885,
+          813,
+          1188,
+          1233
+        ]
+      }
     },
     {
       "file": "assets/exercises/freeweights-atlas-draft.png",
       "origin": "OpenAI image generation, original atlas, 2026-09-12",
       "status": "draft",
-      "layout": "3 equal columns by 3 equal rows; runtime clipping",
-      "cells": ["squat","benchPress","deadlift","barbellRow","overheadPress","dumbbellBenchPress","dumbbellRow","lateralRaise","dumbbellCurl"],
-      "reviewRequired": "Anatomy, bar paths, grip and shoulder positions, bench support, safety equipment, target-muscle emphasis and cell clipping. Static examples are not a complete motion guide."
-    }
-    ,{
+      "layout": "3 rough columns by 3 rough rows. The generator did not keep figures inside equal cells, so the app positions each one from the measured rectangle in `frames` rather than clipping on a grid. Re-run scripts/measure-atlas.mjs after any change to this image.",
+      "cells": [
+        "squat",
+        "benchPress",
+        "deadlift",
+        "barbellRow",
+        "overheadPress",
+        "dumbbellBenchPress",
+        "dumbbellRow",
+        "lateralRaise",
+        "dumbbellCurl"
+      ],
+      "reviewRequired": "Anatomy, bar paths, grip and shoulder positions, bench support, safety equipment, target-muscle emphasis and cell clipping. Static examples are not a complete motion guide.",
+      "imageSize": 1254,
+      "frames": {
+        "squat": [
+          27,
+          39,
+          381,
+          366
+        ],
+        "benchPress": [
+          417,
+          66,
+          837,
+          369
+        ],
+        "deadlift": [
+          921,
+          24,
+          1212,
+          372
+        ],
+        "barbellRow": [
+          48,
+          438,
+          366,
+          780
+        ],
+        "overheadPress": [
+          453,
+          405,
+          795,
+          822
+        ],
+        "dumbbellBenchPress": [
+          888,
+          486,
+          1245,
+          786
+        ],
+        "dumbbellRow": [
+          60,
+          858,
+          372,
+          1188
+        ],
+        "lateralRaise": [
+          450,
+          822,
+          798,
+          1209
+        ],
+        "dumbbellCurl": [
+          972,
+          822,
+          1155,
+          1212
+        ]
+      }
+    },
+    {
       "file": "assets/exercises/ppl-atlas-draft.png",
       "origin": "OpenAI image generation, original atlas, 2026-09-12",
       "status": "draft",
       "columns": 2,
-      "layout": "2 equal columns by 2 equal rows; runtime clipping; global slots 18 through 21",
-      "cells": ["tricepsPushdown", "facePull", "romanianDeadlift", "crunch"],
-      "reviewRequired": "Cable geometry, rope grip, face pull rotation, neutral spine in hip hinge, crunch range and anatomy require qualified review."
+      "layout": "2 rough columns by 2 rough rows. The generator did not keep figures inside equal cells, so the app positions each one from the measured rectangle in `frames` rather than clipping on a grid. Re-run scripts/measure-atlas.mjs after any change to this image.",
+      "cells": [
+        "tricepsPushdown",
+        "facePull",
+        "romanianDeadlift",
+        "crunch"
+      ],
+      "reviewRequired": "Cable geometry, rope grip, face pull rotation, neutral spine in hip hinge, crunch range and anatomy require qualified review.",
+      "imageSize": 1254,
+      "frames": {
+        "tricepsPushdown": [
+          177,
+          0,
+          549,
+          621
+        ],
+        "facePull": [
+          723,
+          3,
+          1233,
+          630
+        ],
+        "romanianDeadlift": [
+          174,
+          642,
+          477,
+          1203
+        ],
+        "crunch": [
+          609,
+          852,
+          1239,
+          1101
+        ]
+      }
     }
   ]
 }

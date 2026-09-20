@@ -9,6 +9,16 @@
 - Validation: `npm run check` passed TypeScript, 63 tests and harness checks. Web export passed. Browser geometry checks passed 24 language/width/exercise combinations for automatic transitions, explicit set completion/rest skip and pause/resume. `npm run test:rls` passed cross-user/anonymous denial, revision conflict and account deletion cascade in isolated Postgres 16 with mocked Auth identity; hosted Supabase/OAuth is unverified. No native build or device verification in this follow-up.
 - Earlier launch-preparation work still pending: complete copy audit, AdSense/AdMob integration, feedback/update services, final production identity, privacy/support pages and store preparation. Apple enrollment/domain/provider configuration are not yet supplied. Do not submit or publicly deploy; the user requested preparation first.
 
+## 2026-09-20 exercise images no longer clipped on a guessed grid
+
+A user reported figures with cut heads and a neighbour's shoe showing as a speck in the corner. The cause was not a bad crop but a wrong assumption: the app clipped each atlas into equal thirds, and the generated art does not sit on an even grid. Measured against the images, the real cell boundaries are off by up to 49 pixels, and figures differ in size, so several were cut while their neighbours bled in.
+
+Figures are now positioned from rectangles measured from the images. `scripts/measure-atlas.mjs` finds each figure and writes its rectangle into the asset manifest; `--check` runs in the gate and fails when a rectangle is missing, a figure cannot be found, two figures overlap, or a stored rectangle no longer matches its image. Each figure is fitted whole into its frame rather than cropped, and clipped to its own rectangle so nothing from a neighbour can appear. All 22 were verified to fit without clipping and none overlap.
+
+Worth noting for anyone regenerating art: the prompts already ask for equal cells with 12% margins and nothing crossing the midlines. The generator ignored that, and nothing caught it until a user did. The prompt is not the control; the measurement is. That is why [the exercise art skill](../.agents/skills/fitin-exercise-art/SKILL.md) exists and why the check gate now includes atlas geometry.
+
+Still true: the art is draft and unreviewed. Geometry passing says nothing about whether a pose is correct or safe.
+
 ## 2026-09-14 accounts working end to end
 
 Social-only sign-in works on a real device against the Seoul development project. Verified in the database after a real sign-in: one user, one mirrored account row recording `google` as the signup provider with the display name captured, one identity, and a workout backup row, so sync runs. Attaching a second provider to that account is still refused with `FITIN_USE_EXISTING_PROVIDER`, which is the rule this design exists for.
